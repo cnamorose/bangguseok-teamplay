@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assemblies Assembly[]
+  results    Result[]
+}
+
+model Assembly {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+
+  searchPersona    String
+  generatePersona  String
+  organizePersona  String
+  visualizePersona String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  results Result[]
+}
+
+model Result {
+  id         String   @id @default(uuid())
+  assemblyId String
+  userId     String
+  topic      String
+  resultData Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  assembly  Assembly   @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentLogs AgentLog[]
+}
+
+model AgentLog {
+  id          String    @id @default(uuid())
+  resultId    String
+  stage       String
+  persona     String
+  status      String    @default("pending")
+  output      Json?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  result   Result     @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  apiUsage ApiUsage[]
+}
+
+model ApiUsage {
+  id         String   @id @default(uuid())
+  agentLogId String
+  provider   String
+  tokensIn   Int?
+  tokensOut  Int?
+  cost       Decimal  @default(0)
+  createdAt  DateTime @default(now())
+
+  agentLog AgentLog @relation(fields: [agentLogId], references: [id], onDelete: Cascade)
+}
