@@ -13,8 +13,11 @@
     "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
+    "docx": "^9.7.1",
     "jsonwebtoken": "^9.0.3",
     "next": "16.2.10",
+    "openai": "^6.47.0",
+    "pptxgenjs": "^4.0.1",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

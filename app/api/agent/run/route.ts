@@ -6,6 +6,7 @@ import { runGenerate } from "@/lib/agents/generate";
 import { runOrganize } from "@/lib/agents/organize";
 import { runVisualize } from "@/lib/agents/visualize";
 import { Prisma } from "@prisma/client";
+import { createDocument, saveToPublic } from "@/lib/documents";
 
 export async function POST(req: NextRequest) {
   try {
@@ -87,11 +88,19 @@ export async function POST(req: NextRequest) {
       runVisualize(visualizePersona, organize)
     );
 
-    // 6. 최종 결과를 result에 저장
+    // 6. 시각화 결과로 실제 파일 생성
+    const { buffer, ext } = await createDocument(visualize);
+    const filename = `${result.id}.${ext}`; // 파일명은 result id로 (충돌 방지)
+    const filePath = await saveToPublic(buffer, filename);
+
+    // 7. 최종 결과 + 파일 경로 저장
     const finalData = { search, generate, organize, visualize };
     await prisma.result.update({
       where: { id: result.id },
-      data: { resultData: finalData as unknown as Prisma.InputJsonValue },
+      data: {
+        resultData: finalData as unknown as Prisma.InputJsonValue,
+        filePath,
+      },
     });
 
     // 7. 응답

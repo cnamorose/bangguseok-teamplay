@@ -17,8 +17,10 @@ export interface OrganizeOutput {
 }
 
 export interface VisualizeOutput {
-  slides: {
-    heading: string;
-    bullets: string[];
+  format: "report" | "slides" | "paper";  // 어떤 산출물인지 (파일 생성 때 구분용)
+  title: string;
+  sections: {
+    heading: string;      // 섹션/슬라이드 제목
+    content: string[];    // 내용 (문단들 or 불릿들 — 배열로 통일)
   }[];
 }

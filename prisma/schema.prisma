@@ -47,6 +47,7 @@ model Result {
   userId     String
   topic      String
   resultData Json?
+  filePath   String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
