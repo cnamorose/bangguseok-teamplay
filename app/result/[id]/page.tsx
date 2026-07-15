@@ -33,6 +33,7 @@ const STAGE_LABEL: Record<string, string> = {
   generate: "📝 생성",
   organize: "✨ 정리",
   visualize: "📊 시각화",
+  critic: "🎯 비평가", 
 };
 
 export default function ResultPage() {
@@ -121,20 +122,49 @@ export default function ResultPage() {
 
 // 단계별로 출력 형태가 달라서 각각 맞게 보여줌
 function StageOutput({ stage, output }: { stage: string; output: any }) {
-  if (stage === "search") {
-    return (
-      <div>
-        <strong>핵심 포인트</strong>
-        <ul>
-          {output.keyPoints?.map((p: string, i: number) => <li key={i}>{p}</li>)}
-        </ul>
-        <strong>출처</strong>
-        <ul>
-          {output.sources?.map((s: string, i: number) => <li key={i}>{s}</li>)}
-        </ul>
-      </div>
-    );
-  }
+    if (stage === "search") {
+  return (
+    <div>
+      <strong>핵심 포인트</strong>
+      <ul>
+        {output.keyPoints?.map((p: string, i: number) => (
+          <li key={i}>{p}</li>
+        ))}
+      </ul>
+
+      <strong>출처</strong>
+      <ul>
+        {output.sources?.map((s: string, i: number) => {
+          // "제목 (https://...)" 형태에서 URL 추출
+          const match = s.match(/^(.*)\s\((https?:\/\/[^)]+)\)$/);
+
+          if (match) {
+            const [, title, url] = match;
+
+            return (
+              <li key={i}>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "#0066cc",
+                    textDecoration: "underline",
+                  }}
+                >
+                  {title}
+                </a>
+              </li>
+            );
+          }
+
+          // 형식이 안 맞으면 그냥 텍스트
+          return <li key={i}>{s}</li>;
+        })}
+      </ul>
+    </div>
+  );
+}
 
   if (stage === "generate" || stage === "organize") {
     return (
@@ -162,6 +192,35 @@ function StageOutput({ stage, output }: { stage: string; output: any }) {
             </ul>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (stage === "critic") {
+    return (
+      <div>
+        <div
+          style={{
+            display: "inline-block",
+            padding: "4px 12px",
+            borderRadius: 999,
+            fontSize: 13,
+            fontWeight: 600,
+            marginBottom: 10,
+            background: output.pass ? "#e6f4ea" : "#fdeaea",
+            color: output.pass ? "#137333" : "#c5221f",
+          }}
+        >
+          {output.pass ? "✅ 통과" : "🔄 수정 요청"}
+        </div>
+        <p style={{ fontStyle: "italic", marginBottom: 8, lineHeight: 1.6 }}>
+          💬 “{output.comment}”
+        </p>
+        {output.feedback && (
+          <p style={{ color: "#666", fontSize: 14, lineHeight: 1.6 }}>
+            <strong>피드백:</strong> {output.feedback}
+          </p>
+        )}
       </div>
     );
   }

@@ -18,8 +18,8 @@ export const PERSONA_CATALOG: Record<string, PersonaCard[]> = {
     { id: "story", name: "스토리텔러", description: "이야기와 비유로 몰입감 있게", emoji: "📖" },
   ],
   organize: [
-    { id: "proofreader", name: "교정관", description: "문법과 표현을 매끄럽게 다듬기", emoji: "✏️" },
-    { id: "critic", name: "비평가", description: "허점을 짚어 더 탄탄하게", emoji: "🎯" },
+    { id: "proofreader", name: "교정관", description: "문법과 문체를 매끄럽게 다듬어요", emoji: "✏️" },
+    { id: "summarizer", name: "요약 전문가", description: "핵심만 남기고 간결하게 압축해요", emoji: "📌" },
   ],
   visualize: [
     { id: "typewriter", name: "인간 타자기", description: "실무 보고서로 정돈해 드려요 (.docx)", emoji: "📄" },
@@ -28,6 +28,12 @@ export const PERSONA_CATALOG: Record<string, PersonaCard[]> = {
   ],
 };
 
+export const WRITING_STYLES = [
+  { id: "plain", name: "평서체", description: "~한다, ~했다 (논문·보고서용)" },
+  { id: "formal", name: "합쇼체", description: "~합니다, ~습니다 (정중한 발표용)" },
+  { id: "soft", name: "해요체", description: "~해요 (부드럽고 친근하게)" },
+] as const;
+
 // 단계 정보 (순서 + 라벨)
 export const STAGES = [
   { key: "search", label: "서치", order: 1 },
@@ -35,3 +41,4 @@ export const STAGES = [
   { key: "organize", label: "정리", order: 3 },
   { key: "visualize", label: "시각화", order: 4 },
 ] as const;
+

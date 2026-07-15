@@ -1,11 +1,11 @@
-import { callLLMJson } from "@/lib/ai";
+import { callLLMJson, LLMUsage } from "@/lib/ai";
 import { VISUALIZE_PERSONAS } from "@/lib/personas";
 import { OrganizeOutput, VisualizeOutput } from "@/lib/pipeline-types";
 
 export async function runVisualize(
   personaId: string,
   organizeResult: OrganizeOutput
-): Promise<VisualizeOutput> {
+): Promise<{ output: VisualizeOutput; usage: LLMUsage }> {
   const persona = VISUALIZE_PERSONAS[personaId];
   if (!persona) throw new Error(`알 수 없는 시각화 페르소나: ${personaId}`);
 
@@ -15,24 +15,13 @@ export async function runVisualize(
 ${organizeResult.content}
 `.trim();
 
-  // 페르소나별로 어떤 형식/구조로 만들지 지시 (출력 JSON 구조는 동일)
   let formatGuide = "";
   if (personaId === "slideMaker") {
-    formatGuide = `
-"format"은 "slides"로 설정해.
-각 슬라이드를 하나의 section으로 만들고, content 배열의 각 원소는 짧은 불릿 문장이야.
-`.trim();
+    formatGuide = `"format"은 "slides"로 설정해.\n각 슬라이드를 하나의 section으로 만들고, content 배열의 각 원소는 짧은 불릿 문장이야.`;
   } else if (personaId === "alchemist") {
-    formatGuide = `
-"format"은 "paper"로 설정해.
-서론/본론/결론 등을 각각 section으로 만들고, content 배열의 각 원소는 하나의 문단이야.
-`.trim();
+    formatGuide = `"format"은 "paper"로 설정해.\n서론/본론/결론 등을 각각 section으로 만들고, content 배열의 각 원소는 하나의 문단이야.`;
   } else {
-    // 기본: 보고서 (인간 타자기)
-    formatGuide = `
-"format"은 "report"로 설정해.
-개요/분석/제언 등을 각각 section으로 만들고, content 배열의 각 원소는 하나의 문단이야.
-`.trim();
+    formatGuide = `"format"은 "report"로 설정해.\n개요/분석/제언 등을 각각 section으로 만들고, content 배열의 각 원소는 하나의 문단이야.`;
   }
 
   const userPrompt = `
@@ -52,8 +41,10 @@ ${formatGuide}
 }
 `.trim();
 
-  return callLLMJson<VisualizeOutput>({
+  const { data, usage } = await callLLMJson<VisualizeOutput>({
     systemPrompt: persona.systemPrompt,
     userPrompt,
   });
+
+  return { output: data, usage };
 }

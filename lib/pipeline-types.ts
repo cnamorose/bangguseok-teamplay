@@ -24,3 +24,10 @@ export interface VisualizeOutput {
     content: string[];    // 내용 (문단들 or 불릿들 — 배열로 통일)
   }[];
 }
+
+// 비평가의 평가 결과
+export interface CriticResult {
+  pass: boolean;       // 통과 여부 (true면 더 이상 재생성 안 함)
+  feedback: string;    // 개선 피드백 (재생성 시 생성에게 전달)
+  comment: string;     // 대화체 코멘트 (화면에 캐릭터 대사로 보여줄 것)
+}
