@@ -1,4 +1,6 @@
 import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -23,4 +25,25 @@ export function verifyToken(token: string): TokenPayload | null {
     // 토큰이 위조됐거나 만료되면 null 반환
     return null;
   }
+}
+
+/**
+ * 현재 요청의 쿠키에서 로그인한 유저를 꺼낸다.
+ * 로그인 안 됐으면 null 반환.
+ * → me 라우트, 실행 라우트 등 "로그인 유저가 필요한" 모든 곳에서 재사용.
+ */
+export async function getCurrentUser() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  if (!token) return null;
+
+  const payload = verifyToken(token);
+  if (!payload) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { id: true, email: true, name: true },
+  });
+
+  return user; // 있으면 유저 객체, 없으면 null
 }
