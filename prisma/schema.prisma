@@ -22,6 +22,7 @@ model User {
 
   assemblies Assembly[]
   results    Result[]
+  evaluations Evaluation[]
 }
 
 model Assembly {
@@ -81,4 +82,15 @@ model ApiUsage {
   createdAt  DateTime @default(now())
 
   agentLog AgentLog @relation(fields: [agentLogId], references: [id], onDelete: Cascade)
+}
+
+model Evaluation {
+  id        String   @id @default(uuid())
+  userId    String
+  topic     String
+  text      String
+  results   Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

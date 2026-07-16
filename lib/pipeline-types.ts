@@ -31,3 +31,14 @@ export interface CriticResult {
   feedback: string;    // 개선 피드백 (재생성 시 생성에게 전달)
   comment: string;     // 대화체 코멘트 (화면에 캐릭터 대사로 보여줄 것)
 }
+
+// 개별 평가자의 평가 결과
+export interface EvaluationResult {
+  evaluatorId: string;
+  evaluatorName: string;
+  scoreLabel: string;
+  score: number;
+  maxScore: number;
+  comment: string;
+  sources?: string[]; // 서치 평가자만: 검색한 출처
+}
