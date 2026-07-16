@@ -1,7 +1,8 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Shelves from "@/app/components/Shelves";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,8 +30,8 @@ export default function LoginPage() {
         return;
       }
 
-      // 성공하면 메인 페이지로 이동
-      router.push("/");
+      // 성공하면 서버가 알려준 곳(메인 페이지)으로 이동
+      router.push(data.redirectTo || "/main");
       router.refresh();
     } catch {
       setError("서버 오류가 발생했습니다.");
@@ -40,34 +41,54 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "80px auto", padding: 20 }}>
-      <h1 style={{ fontSize: 24, marginBottom: 20 }}>로그인</h1>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <input
-          type="email"
-          placeholder="이메일"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-        />
-        <input
-          type="password"
-          placeholder="비밀번호"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-        />
-        {error && <p style={{ color: "red", fontSize: 14 }}>{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ padding: 10, background: "#000", color: "#fff", borderRadius: 6, cursor: "pointer" }}
-        >
-          {loading ? "처리 중..." : "로그인"}
-        </button>
-      </form>
+    <div className="tp-wall">
+      {/* 배경 책장 (장식) */}
+      <Shelves />
+
+      {/* 로그인 카드 */}
+      <div className="tp-card">
+        <div className="tp-card-header">
+          <h1>🏠 방구석 팀플</h1>
+          <p>내 방 책장에서 시작하는 팀 프로젝트</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="tp-card-body">
+          <label className="tp-field">
+            <span className="tp-label">이메일</span>
+            <input
+              className="tp-input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </label>
+
+          <label className="tp-field">
+            <span className="tp-label">비밀번호</span>
+            <input
+              className="tp-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </label>
+
+          {error && <p className="tp-error">{error}</p>}
+
+          <button className="tp-btn" type="submit" disabled={loading}>
+            {loading ? "여는 중..." : "📖 책장 열기"}
+          </button>
+
+          <p className="tp-signup">
+            아직 방이 없나요?{" "}
+            <a href="/signup" className="tp-link">방 만들기 →</a>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

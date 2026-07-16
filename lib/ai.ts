@@ -9,6 +9,7 @@ interface CallLLMOptions {
   systemPrompt?: string;
   userPrompt: string;
   model?: string;
+  jsonMode?: boolean; // true면 OpenAI JSON 모드로 유효한 JSON 강제
 }
 
 export interface LLMUsage {
@@ -38,6 +39,7 @@ export async function callLLM({
   systemPrompt,
   userPrompt,
   model = DEFAULT_MODEL,
+  jsonMode = false,
 }: CallLLMOptions): Promise<LLMResponse> {
   const maxRetries = 4;
 
@@ -45,6 +47,8 @@ export async function callLLM({
     try {
       const response = await openai.chat.completions.create({
         model,
+        // JSON 모드: 모델이 문법적으로 유효한 JSON만 내도록 강제
+        ...(jsonMode ? { response_format: { type: "json_object" as const } } : {}),
         messages: [
           ...(systemPrompt ? [{ role: "system" as const, content: systemPrompt }] : []),
           { role: "user" as const, content: userPrompt },
@@ -91,14 +95,26 @@ export async function callLLMJson<T>({
   userPrompt,
   model = DEFAULT_MODEL,
 }: CallLLMOptions): Promise<{ data: T; usage: LLMUsage }> {
-  const { text, usage } = await callLLM({ systemPrompt, userPrompt, model });
+  const maxParseTries = 2; // 깨진 JSON이 오면 한 번 더 물어봄
 
-  const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+  let lastText = "";
+  for (let attempt = 1; attempt <= maxParseTries; attempt++) {
+    const { text, usage } = await callLLM({ systemPrompt, userPrompt, model, jsonMode: true });
+    lastText = text;
 
-  try {
-    return { data: JSON.parse(cleaned) as T, usage };
-  } catch (error) {
-    console.error("JSON 파싱 실패. 원본 응답:", text);
-    throw new Error("LLM이 올바른 JSON을 반환하지 않았습니다.");
+    const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+
+    try {
+      return { data: JSON.parse(cleaned) as T, usage };
+    } catch {
+      // 마지막 시도가 아니면 그냥 다시 호출 (모델은 매번 다르게 답함)
+      if (attempt < maxParseTries) {
+        console.warn(`JSON 파싱 실패, 재요청 (${attempt}/${maxParseTries})`);
+        continue;
+      }
+    }
   }
+
+  console.error("JSON 파싱 실패. 원본 응답:", lastText);
+  throw new Error("LLM이 올바른 JSON을 반환하지 않았습니다.");
 }

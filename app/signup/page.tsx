@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Shelves from "@/app/components/Shelves";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -41,41 +42,65 @@ export default function SignupPage() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "80px auto", padding: 20 }}>
-      <h1 style={{ fontSize: 24, marginBottom: 20 }}>회원가입</h1>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <input
-          type="email"
-          placeholder="이메일"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-        />
-        <input
-          type="password"
-          placeholder="비밀번호"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-        />
-        <input
-          type="text"
-          placeholder="이름 (선택)"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={{ padding: 10, border: "1px solid #ccc", borderRadius: 6 }}
-        />
-        {error && <p style={{ color: "red", fontSize: 14 }}>{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ padding: 10, background: "#000", color: "#fff", borderRadius: 6, cursor: "pointer" }}
-        >
-          {loading ? "처리 중..." : "회원가입"}
-        </button>
-      </form>
+    <div className="tp-wall">
+      {/* 배경 책장 (장식) */}
+      <Shelves />
+
+      {/* 회원가입 카드 */}
+      <div className="tp-card">
+        <div className="tp-card-header">
+          <h1>🏠 방 만들기</h1>
+          <p>나만의 책장을 차릴 방을 마련해요</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="tp-card-body">
+          <label className="tp-field">
+            <span className="tp-label">이메일</span>
+            <input
+              className="tp-input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </label>
+
+          <label className="tp-field">
+            <span className="tp-label">비밀번호</span>
+            <input
+              className="tp-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+            />
+          </label>
+
+          <label className="tp-field">
+            <span className="tp-label">이름 <span className="tp-optional">(선택)</span></span>
+            <input
+              className="tp-input"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
+            />
+          </label>
+
+          {error && <p className="tp-error">{error}</p>}
+
+          <button className="tp-btn" type="submit" disabled={loading}>
+            {loading ? "짓는 중..." : "🔑 방 만들기"}
+          </button>
+
+          <p className="tp-signup">
+            이미 방이 있나요?{" "}
+            <a href="/login" className="tp-link">책장 열기 →</a>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

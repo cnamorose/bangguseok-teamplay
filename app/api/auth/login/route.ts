@@ -53,11 +53,12 @@ export async function POST(req: NextRequest) {
       path: "/",
     });
 
-    // 7. 응답
+    // 7. 응답 (로그인 후 이동할 곳도 함께 알려준다)
     return NextResponse.json(
       {
         message: "로그인 성공",
         user: { id: user.id, email: user.email, name: user.name },
+        redirectTo: "/main",
       },
       { status: 200 }
     );

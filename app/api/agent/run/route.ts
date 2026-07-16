@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { topic, searchPersona, generatePersona, organizePersona, visualizePersona, organizeStyle, criticCount } =
+  const { topic, teamName, searchPersona, generatePersona, organizePersona, visualizePersona, organizeStyle, criticCount } =
     await req.json();
 
   if (!topic || !searchPersona || !generatePersona || !organizePersona || !visualizePersona) {
@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
         const assembly = await prisma.assembly.create({
           data: {
             userId: user.id,
-            name: `${topic} 팀`,
+            // 직접 지은 이름이 없으면 주제로 자동 작명
+            name: typeof teamName === "string" && teamName.trim() ? teamName.trim() : `${topic} 팀`,
             searchPersona, generatePersona, organizePersona, visualizePersona,
           },
         });
