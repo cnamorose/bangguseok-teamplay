@@ -72,11 +72,7 @@ export default function ResultView({ id }: { id: string }) {
 
         <div className="tp-page-actions">
           {result.filePath && (
-            <a
-              className="tp-btn-download"
-              href={result.filePath}
-              download={`${result.topic}.${result.filePath.split(".").pop()}`}
-            >
+            <a className="tp-btn-download" href={result.filePath} download>
               📥 결과물 다운로드
             </a>
           )}

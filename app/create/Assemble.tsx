@@ -22,8 +22,9 @@ export default function Assemble() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 우측에 펼쳐 놓고 보는 단계 (기본: 1단계)
-  const [openStage, setOpenStage] = useState<string>(STAGES[0].key);
+  // 드래그앤드롭 상태 (카드를 집으면 어느 단계의 누구인지)
+  const [dragging, setDragging] = useState<{ stage: string; personaId: string } | null>(null);
+  const [overStage, setOverStage] = useState<string | null>(null);
 
   // 진행 상태
   const [progressMessage, setProgressMessage] = useState("");
@@ -48,7 +49,7 @@ export default function Assemble() {
       return;
     }
     if (STAGES.some((s) => !selected[s.key])) {
-      setError("모든 단계에서 페르소나를 선택해주세요.");
+      setError("모든 단계에 팀원을 채워주세요.");
       return;
     }
     if (selected.organize === "proofreader" && !writingStyle) {
@@ -139,11 +140,9 @@ export default function Assemble() {
     );
   }
 
-  const openStageInfo = STAGES.find((s) => s.key === openStage);
-
   return (
     <div className="tp-assemble">
-      {/* ── 좌측: 주제 + 4단계 + 비평가 + 실행 ── */}
+      {/* ── 좌측: 팀 이름 + 주제 + 단계 소켓 + 비평가 + 실행 ── */}
       <div className="tp-col">
         <label className="tp-field">
           <span className="tp-label">팀 이름</span>
@@ -171,26 +170,47 @@ export default function Assemble() {
             const picked = PERSONA_CATALOG[stage.key].find(
               (p) => p.id === selected[stage.key]
             );
+            const isTarget = dragging?.stage === stage.key;
             return (
-              <button
+              <div
                 key={stage.key}
-                type="button"
-                className="tp-stage-box"
-                aria-pressed={openStage === stage.key}
-                onClick={() => setOpenStage(stage.key)}
+                className={[
+                  picked ? "tp-slot tp-slot-filled" : "tp-slot",
+                  isTarget ? "tp-drop-ok" : "",
+                  isTarget && overStage === stage.key ? "tp-drop-over" : "",
+                ].join(" ").trim()}
+                onDragOver={(e) => {
+                  if (isTarget) {
+                    e.preventDefault(); // 드롭 허용
+                    e.dataTransfer.dropEffect = "copy";
+                    setOverStage(stage.key);
+                  }
+                }}
+                onDragLeave={(e) => {
+                  // 자식 요소로 들어간 경우는 무시
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverStage(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragging && dragging.stage === stage.key) {
+                    selectPersona(stage.key, dragging.personaId);
+                  }
+                  setDragging(null);
+                  setOverStage(null);
+                }}
               >
-                <span className="tp-stage-num">{stage.order}</span>
-                <span className="tp-stage-text">
-                  <span className="tp-stage-label">{stage.label}</span>
-                  <span
-                    className={
-                      picked ? "tp-stage-pick" : "tp-stage-pick tp-stage-pick-empty"
-                    }
-                  >
-                    {picked ? `${picked.emoji} ${picked.name}` : "아직 안 골랐어요"}
-                  </span>
+                <span className="tp-slot-num">{stage.order}</span>
+                <span className="tp-slot-text">
+                  <span className="tp-slot-label">{stage.label}</span>
+                  {picked ? (
+                    <span className="tp-slot-pick">
+                      {picked.emoji} {picked.name}
+                    </span>
+                  ) : (
+                    <span className="tp-slot-hint">여기로 끌어다 놓기</span>
+                  )}
                 </span>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -226,61 +246,72 @@ export default function Assemble() {
         </button>
       </div>
 
-      {/* ── 우측: 펼친 단계의 페르소나 ── */}
+      {/* ── 우측: 1~4단계 팀원 카드 전부 (가로 배치) ── */}
       <div className="tp-col">
-        {!openStageInfo ? (
-          <p className="tp-cast-hint">
-            왼쪽에서 단계를 눌러
-            <br />
-            팀원을 골라보세요.
-          </p>
-        ) : (
-          <>
-            <p className="tp-col-title">
-              {openStageInfo.order}단계 · {openStageInfo.label} — 누구에게 맡길까요?
-            </p>
+        <p className="tp-col-title">
+          팀원 카드 — 끌어다 왼쪽 단계에 꽂으세요 (눌러서 뽑아도 돼요)
+        </p>
 
-            <div className="tp-cast">
-              {PERSONA_CATALOG[openStage].map((persona) => (
+        <div className="tp-stage-grid">
+          {STAGES.map((stage) => (
+            <div className="tp-stage-col" key={stage.key}>
+              <div className="tp-stage-col-head">
+                {stage.order}단계 · {stage.label}
+              </div>
+
+              {PERSONA_CATALOG[stage.key].map((persona) => (
                 <button
                   key={persona.id}
                   type="button"
-                  className="tp-cast-row"
-                  aria-pressed={selected[openStage] === persona.id}
-                  onClick={() => selectPersona(openStage, persona.id)}
+                  className={
+                    dragging?.personaId === persona.id && dragging?.stage === stage.key
+                      ? "tp-mini-card tp-cast-dragging"
+                      : "tp-mini-card"
+                  }
+                  aria-pressed={selected[stage.key] === persona.id}
+                  onClick={() => selectPersona(stage.key, persona.id)}
+                  draggable
+                  onDragStart={(e) => {
+                    // Firefox는 setData가 있어야 드래그가 시작됨
+                    e.dataTransfer.setData("text/plain", persona.id);
+                    e.dataTransfer.effectAllowed = "copy";
+                    setDragging({ stage: stage.key, personaId: persona.id });
+                  }}
+                  onDragEnd={() => {
+                    setDragging(null);
+                    setOverStage(null);
+                  }}
                 >
-                  <span className="tp-face">{persona.emoji}</span>
-                  <span className="tp-cast-body">
-                    <span className="tp-cast-name">{persona.name}</span>
-                    <span className="tp-bubble">{persona.line}</span>
-                    <span className="tp-cast-desc">{persona.description}</span>
-                  </span>
+                  <span className="tp-mini-face">{persona.emoji}</span>
+                  <span className="tp-mini-name">{persona.name}</span>
+                  <span className="tp-mini-line">&ldquo;{persona.line}&rdquo;</span>
+                  <span className="tp-mini-desc">{persona.description}</span>
                 </button>
               ))}
-            </div>
 
-            {/* 교정관을 골랐을 때만 문체 선택 */}
-            {openStage === "organize" && selected.organize === "proofreader" && (
-              <div className="tp-sub">
-                <p className="tp-sub-title">✏️ 어떤 문체로 다듬을까요?</p>
-                <div className="tp-choices">
-                  {WRITING_STYLES.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      className="tp-chip"
-                      aria-pressed={writingStyle === s.id}
-                      onClick={() => setWritingStyle(s.id)}
-                      title={s.description}
-                    >
-                      {s.name}
-                    </button>
-                  ))}
+              {/* 교정관을 골랐을 때만 문체 선택 (정리 열 아래) */}
+              {stage.key === "organize" && selected.organize === "proofreader" && (
+                <div className="tp-sub tp-sub-tight">
+                  <p className="tp-sub-title">✏️ 어떤 문체로?</p>
+                  <div className="tp-choices">
+                    {WRITING_STYLES.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className="tp-chip"
+                        aria-pressed={writingStyle === s.id}
+                        onClick={() => setWritingStyle(s.id)}
+                        title={s.description}
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </>
-        )}
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -33,8 +33,8 @@ function coverColor(id: string): string {
   return COVERS[Math.abs(hash) % COVERS.length];
 }
 
-// 한 선반에 5권씩 나눠 담기
-const PER_SHELF = 5;
+// 한 선반에 6권씩 나눠 담기
+const PER_SHELF = 6;
 
 function chunk<T>(list: T[], size: number): T[][] {
   const rows: T[][] = [];
@@ -47,6 +47,7 @@ export default function Shelf() {
   const [results, setResults] = useState<ResultItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     fetch("/api/results")
@@ -58,6 +59,16 @@ export default function Shelf() {
       .catch(() => setError("책장을 불러오지 못했습니다."))
       .finally(() => setLoading(false));
   }, []);
+
+  // 제목(주제)이나 팀 이름으로 필터
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? results.filter(
+        (item) =>
+          item.topic.toLowerCase().includes(q) ||
+          item.assembly.name.toLowerCase().includes(q)
+      )
+    : results;
 
   return (
     <>
@@ -72,8 +83,46 @@ export default function Shelf() {
       )}
 
       {!loading && !error && results.length > 0 && (
+        <>
+          {/* 검색바 + 새 책 만들기 */}
+          <div className="tp-shelf-bar">
+            <div className="tp-search">
+              <span className="tp-search-icon" aria-hidden="true">🔍</span>
+              <input
+                className="tp-search-input"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="제목이나 팀 이름으로 찾기"
+                aria-label="책장 검색"
+              />
+              {q && (
+                <span className="tp-search-count">
+                  {filtered.length}권
+                </span>
+              )}
+            </div>
+
+            <button
+              className="tp-btn-sm"
+              onClick={() => router.push("/create")}
+              style={{ marginLeft: "auto" }}
+            >
+              📖 새 책 만들기
+            </button>
+          </div>
+
+          {q && filtered.length === 0 && (
+            <div className="tp-shelf-empty">
+              &ldquo;{query.trim()}&rdquo; 에 맞는 책이 없어요.
+            </div>
+          )}
+        </>
+      )}
+
+      {!loading && !error && filtered.length > 0 && (
         <div className="tp-display">
-          {chunk(results, PER_SHELF).map((row, i) => (
+          {chunk(filtered, PER_SHELF).map((row, i) => (
             <div className="tp-shelf-unit" key={i}>
               <div className="tp-shelf-row">
                 {row.map((item) => (

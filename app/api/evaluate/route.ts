@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { evaluateChief, evaluateSearch, evaluateOrganize } from "@/lib/agents/evaluator";
 import { Prisma } from "@prisma/client";
 
+// 평가단 3명 호출이 길어질 수 있어 실행 시간을 늘린다
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {

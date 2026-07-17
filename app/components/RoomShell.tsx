@@ -11,7 +11,6 @@ export interface RoomUser {
 }
 
 const NAV = [
-  { href: "/main", icon: "🏠", label: "내 방" },
   { href: "/bookshelf", icon: "📚", label: "책장" },
   { href: "/create", icon: "✍️", label: "새로 만들기" },
   { href: "/evaluate", icon: "🧑‍⚖️", label: "평가단" },
@@ -70,7 +69,7 @@ export default function RoomShell({
     <div className="tp-room">
       {/* 좌측 메뉴바 */}
       <aside className="tp-sidebar">
-        <Link href="/main" className="tp-logo">
+        <Link href="/bookshelf" className="tp-logo">
           🏠 <span>방구석 팀플</span>
         </Link>
 

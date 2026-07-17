@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       {
         message: "로그인 성공",
         user: { id: user.id, email: user.email, name: user.name },
-        redirectTo: "/main",
+        redirectTo: "/bookshelf",
       },
       { status: 200 }
     );

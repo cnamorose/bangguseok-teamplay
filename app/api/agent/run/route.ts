@@ -6,8 +6,10 @@ import { runGenerate } from "@/lib/agents/generate";
 import { runOrganize } from "@/lib/agents/organize";
 import { runVisualize } from "@/lib/agents/visualize";
 import { runCritic } from "@/lib/agents/critic";
-import { createDocument, saveToPublic } from "@/lib/documents";
 import { Prisma } from "@prisma/client";
+
+// 파이프라인이 길어 시간이 걸리므로 함수 실행 시간을 늘린다
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -141,17 +143,15 @@ export async function POST(req: NextRequest) {
           runVisualize(visualizePersona, organize)
         );
 
-        // 파일 생성
-        send({ type: "progress", stage: "file", message: "📦 결과물을 만드는 중..." });
-        const { buffer, ext } = await createDocument(visualize);
-        const filePath = await saveToPublic(buffer, `${result.id}.${ext}`);
+        // 결과물은 다운로드 누를 때 즉석 생성한다 (서버리스는 디스크에 못 저장)
+        send({ type: "progress", stage: "file", message: "📦 결과물을 준비하는 중..." });
 
         const finalData = { search, generate, organize, visualize };
         await prisma.result.update({
           where: { id: result.id },
           data: {
             resultData: finalData as unknown as Prisma.InputJsonValue,
-            filePath,
+            filePath: `/api/result/${result.id}/download`,
           },
         });
 

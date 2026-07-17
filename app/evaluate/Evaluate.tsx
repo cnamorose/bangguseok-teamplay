@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { diffWords } from "diff";
 
 interface EvalResult {
   evaluatorId: string;
@@ -63,6 +64,7 @@ export default function Evaluate() {
   const [progress, setProgress] = useState("");
   const [results, setResults] = useState<EvalResult[]>([]);
   const [error, setError] = useState("");
+  const [parsing, setParsing] = useState(false);
 
   // 논의 관련
   const [librarianTurns, setLibrarianTurns] = useState(2);
@@ -72,6 +74,8 @@ export default function Evaluate() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [discussProgress, setDiscussProgress] = useState("");
   const [revisedText, setRevisedText] = useState("");
+  // 논의 시작 시점의 원본 (비교 기준 — 이후 입력칸을 고쳐도 디프가 안 흔들리게)
+  const [originalForDiff, setOriginalForDiff] = useState("");
 
   // 우측 페이지 인덱스
   const [page, setPage] = useState(0);
@@ -95,6 +99,54 @@ export default function Evaluate() {
     if (discussStarted) setPage(EVALUATORS.length); // 회의 페이지
   }, [discussStarted]);
 
+  // 파일 업로드 → 파싱 → 주제/글 채우기
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // 같은 파일을 다시 골라도 동작하게 초기화
+    if (!file) return;
+
+    setError("");
+    setParsing(true);
+
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+
+      const res = await fetch("/api/evaluate/parse-file", { method: "POST", body: fd });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "파일을 읽지 못했습니다.");
+        return;
+      }
+
+      setTopic(data.topic);
+      setText(data.text);
+    } catch {
+      setError("파일 업로드에 실패했습니다.");
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  // 전부 비우고 처음부터 (다른 글을 평가받고 싶을 때)
+  const handleReset = () => {
+    setTopic("");
+    setText("");
+    setError("");
+    setProgress("");
+    setResults([]);
+    setDiscussStarted(false);
+    setDiscussing(false);
+    setMessages([]);
+    setDiscussProgress("");
+    setRevisedText("");
+    setOriginalForDiff("");
+    setLibrarianTurns(2);
+    setWordsmithTurns(2);
+    setPage(0);
+  };
+
   const handleEvaluate = async () => {
     setError("");
     if (!topic.trim() || !text.trim()) {
@@ -112,6 +164,7 @@ export default function Evaluate() {
     setMessages([]);
     setDiscussProgress("");
     setRevisedText("");
+    setOriginalForDiff("");
     setPage(0);
 
     try {
@@ -165,6 +218,7 @@ export default function Evaluate() {
     setDiscussStarted(true);
     setDiscussing(true);
     setMessages([]);
+    setOriginalForDiff(text); // 비교 기준 스냅샷
     setDiscussProgress("평가단을 회의실로 모으는 중...");
 
     try {
@@ -213,13 +267,22 @@ export default function Evaluate() {
   const byId = (id: string) => results.find((r) => r.evaluatorId === id);
   const allDone = results.length === EVALUATORS.length;
 
-  // 넘겨 볼 수 있는 페이지 목록 (평가자 3 + 회의)
+  // 글자수 (코드포인트 기준이라 이모지도 1자로 정확히 셈)
+  const charsWithSpace = Array.from(text).length;
+  const charsNoSpace = Array.from(text.replace(/\s/g, "")).length;
+
+  // 넘겨 볼 수 있는 페이지 목록 (평가자 3 + 회의 + 바뀐 곳)
   const pages = [
     ...EVALUATORS.map((ev) => ({ key: ev.id, emoji: ev.emoji })),
     { key: "discuss", emoji: "💬" },
+    { key: "diff", emoji: "🔍" },
   ];
-  // 회의는 평가 3개가 다 나온 뒤에만 열림
-  const pageEnabled = (key: string) => (key === "discuss" ? allDone : true);
+  // 회의는 평가 3개가 다 나온 뒤에만, 비교는 수정본이 나온 뒤에만 열림
+  const pageEnabled = (key: string) => {
+    if (key === "discuss") return allDone;
+    if (key === "diff") return !!revisedText && !!originalForDiff;
+    return true;
+  };
   const cur = Math.min(page, pages.length - 1);
   const curKey = pages[cur].key;
 
@@ -228,7 +291,14 @@ export default function Evaluate() {
     librarian: "📚 인간 도서관",
     wordsmith: "✍️ 글조합 천재",
     discuss: "💬 회의 & 수정본",
+    diff: "🔍 바뀐 곳 (내 글 → 수정본)",
   };
+
+  // 깃허브 커밋 디프처럼: 삭제는 빨강, 추가는 초록
+  const diffParts = useMemo(
+    () => (revisedText && originalForDiff ? diffWords(originalForDiff, revisedText) : []),
+    [originalForDiff, revisedText]
+  );
   const enabledIdx = pages.map((_, i) => i).filter((i) => pageEnabled(pages[i].key));
   const prevIdx = [...enabledIdx].reverse().find((i) => i < cur);
   const nextIdx = enabledIdx.find((i) => i > cur);
@@ -237,6 +307,18 @@ export default function Evaluate() {
     <div className="tp-assemble">
       {/* ── 좌측: 주제 + 글 (높이 채움) ── */}
       <div className="tp-col">
+        {/* 파일 업로드 → 주제/글 자동 채우기 */}
+        <label className={parsing ? "tp-upload tp-upload-busy" : "tp-upload"}>
+          <input
+            type="file"
+            accept=".txt,.docx,.hwp,.hwpx"
+            onChange={handleFile}
+            disabled={parsing}
+            hidden
+          />
+          {parsing ? "📄 파일을 읽는 중..." : "📎 파일 불러오기 (.txt / .docx / .hwp)"}
+        </label>
+
         <label className="tp-field">
           <span className="tp-label">주제</span>
           <input
@@ -257,11 +339,30 @@ export default function Evaluate() {
           />
         </label>
 
+        {/* 글자수 (메모장처럼) */}
+        <p className="tp-charcount">
+          공백 포함 <strong>{charsWithSpace.toLocaleString("ko-KR")}</strong>자 · 공백 제외{" "}
+          <strong>{charsNoSpace.toLocaleString("ko-KR")}</strong>자
+        </p>
+
         {error && <p className="tp-error">{error}</p>}
 
-        <button className="tp-btn" onClick={handleEvaluate} disabled={loading} style={{ width: "100%" }}>
-          {loading ? progress : "🧑‍⚖️ 평가 받기"}
-        </button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button className="tp-btn" onClick={handleEvaluate} disabled={loading} style={{ flex: 1 }}>
+            {loading ? progress : "🧑‍⚖️ 평가 받기"}
+          </button>
+          {(results.length > 0 || discussStarted) && (
+            <button
+              className="tp-btn-outline"
+              onClick={handleReset}
+              disabled={loading || discussing}
+              title="전부 비우고 처음부터"
+              style={{ marginTop: 4 }}
+            >
+              🧹 초기화
+            </button>
+          )}
+        </div>
 
         {/* 점수판 */}
         <div className="tp-scoreboard">
@@ -457,6 +558,40 @@ export default function Evaluate() {
                 </div>
               </div>
             ))}
+          {/* 바뀐 곳: 내 글 | 수정본 (1:1) */}
+          {curKey === "diff" && revisedText && (
+            <div className="tp-diff">
+              <div className="tp-diff-pane">
+                <div className="tp-diff-head tp-diff-head-del">📝 내 글 <span>지워진 부분</span></div>
+                <div className="tp-diff-body">
+                  {diffParts
+                    .filter((p) => !p.added)
+                    .map((p, i) =>
+                      p.removed ? (
+                        <del key={i} className="tp-diff-del">{p.value}</del>
+                      ) : (
+                        <span key={i}>{p.value}</span>
+                      )
+                    )}
+                </div>
+              </div>
+
+              <div className="tp-diff-pane">
+                <div className="tp-diff-head tp-diff-head-add">✨ 수정본 <span>더해진 부분</span></div>
+                <div className="tp-diff-body">
+                  {diffParts
+                    .filter((p) => !p.removed)
+                    .map((p, i) =>
+                      p.added ? (
+                        <ins key={i} className="tp-diff-add">{p.value}</ins>
+                      ) : (
+                        <span key={i}>{p.value}</span>
+                      )
+                    )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 하단 페이지네이션 */}

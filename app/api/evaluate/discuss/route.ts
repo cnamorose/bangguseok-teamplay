@@ -8,6 +8,9 @@ import {
   DiscussionMessage,
 } from "@/lib/agents/discussion";
 
+// 회의(여러 발언 + 중복검사 + 수정본)가 길어서 실행 시간을 늘린다
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
@@ -44,11 +47,18 @@ export async function POST(req: NextRequest) {
         const maxTurns = remaining.librarian + remaining.wordsmith + 4;
         let turnCount = 0;
 
+        // 빈 발언은 화면에 안 띄우고 히스토리에도 안 넣는다
+        const emit = (m: DiscussionMessage): boolean => {
+          if (!m.message.trim()) return false;
+          history.push(m);
+          send({ type: "message", message: m });
+          return true;
+        };
+
         // 평가원이 대화를 연다
         send({ type: "progress", message: "🎬 평가원이 회의를 시작합니다..." });
         const opening = await generateSpeech("chief", text, history);
-        history.push(opening.message);
-        send({ type: "message", message: opening.message });
+        emit(opening.message);
 
         // 대화 루프
         while (turnCount < maxTurns) {
@@ -62,14 +72,11 @@ export async function POST(req: NextRequest) {
           if (decision.next === "chief") {
             // 평가원이 직접 반응
             const speech = await generateSpeech("chief", text, history);
-            history.push(speech.message);
-            send({ type: "message", message: speech.message });
+            emit(speech.message);
           } else {
-            // 도서관 or 천재 발언 (발언권 차감)
+            // 도서관 or 천재 발언 (내용이 있을 때만 발언권 차감)
             const speech = await generateSpeech(decision.next, text, history);
-            history.push(speech.message);
-            remaining[decision.next]--;
-            send({ type: "message", message: speech.message });
+            if (emit(speech.message)) remaining[decision.next]--;
           }
 
           // 도서관·천재 발언권 모두 소진되면 종료
@@ -79,13 +86,14 @@ export async function POST(req: NextRequest) {
         // 평가원 종합 정리
         send({ type: "progress", message: "📝 평가원이 논의를 종합하는 중..." });
         const summary = await generateSummary(text, history);
-        history.push(summary.message);
-        send({ type: "message", message: summary.message });
+        emit(summary.message);
 
-        // 논의를 취합한 수정본 생성
+        // 논의를 취합한 수정본 생성 (내용이 있을 때만 전송)
         send({ type: "progress", message: "✨ 논의를 반영한 수정본을 만드는 중..." });
         const revision = await generateRevision(text, history);
-        send({ type: "revision", revised: revision.revised });
+        if (revision.revised.trim()) {
+          send({ type: "revision", revised: revision.revised });
+        }
 
         send({ type: "complete" });
         controller.close();

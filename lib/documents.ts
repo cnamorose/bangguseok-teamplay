@@ -7,8 +7,6 @@ import {
   AlignmentType,
 } from "docx";
 import pptxgen from "pptxgenjs";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { VisualizeOutput } from "@/lib/pipeline-types";
 
 // 보고서/논문 → docx Buffer
@@ -82,15 +80,4 @@ export async function createDocument(data: VisualizeOutput) {
     return { buffer: await createPptx(data), ext: "pptx" };
   }
   return { buffer: await createDocx(data), ext: "docx" };
-}
-
-// buffer를 public/outputs/에 저장하고, 웹 접근 경로 반환
-export async function saveToPublic(
-  buffer: Buffer,
-  filename: string
-): Promise<string> {
-  const outputDir = path.join(process.cwd(), "public", "outputs");
-  await mkdir(outputDir, { recursive: true });
-  await writeFile(path.join(outputDir, filename), buffer);
-  return `/outputs/${filename}`;
 }

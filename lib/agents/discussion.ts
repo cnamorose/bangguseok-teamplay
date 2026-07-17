@@ -22,6 +22,48 @@ function formatHistory(history: DiscussionMessage[]): string {
   return history.map((m) => `${m.speakerName}: ${m.message}`).join("\n");
 }
 
+// usage 합산 (novelty 검사 등으로 호출이 여러 번 나뉠 때)
+const ZERO_USAGE: LLMUsage = { model: "", inputTokens: 0, outputTokens: 0, cost: 0 };
+function addUsage(a: LLMUsage, b: LLMUsage): LLMUsage {
+  return {
+    model: b.model || a.model,
+    inputTokens: a.inputTokens + b.inputTokens,
+    outputTokens: a.outputTokens + b.outputTokens,
+    cost: a.cost + b.cost,
+  };
+}
+
+/**
+ * 새 발언이 기존 발언들과 '실질적으로 같은 지적'인지 판정.
+ * 표현만 다르고 핵심이 같으면 중복(true).
+ */
+async function judgeDuplicate(
+  candidate: string,
+  history: DiscussionMessage[]
+): Promise<{ duplicate: boolean; usage: LLMUsage }> {
+  const prior = history.map((m, i) => `${i + 1}. ${m.speakerName}: ${m.message}`).join("\n");
+
+  const userPrompt = `
+너는 회의 발언들이 서로 중복되는지 가려내는 심판이야.
+
+[기존 발언들]
+${prior}
+
+[새 발언]
+${candidate}
+
+새 발언이 기존 발언 중 하나와 '실질적으로 같은 지적'인지 판단해.
+- 글의 같은 부분을 같은 이유로 지적하면 → 중복(true). 표현·문장이 달라도 핵심이 같으면 true.
+- 글의 다른 부분을 짚거나, 새로운 근거·관점을 더하면 → 새로움(false).
+
+아래 JSON 형식으로만 응답해.
+{ "duplicate": true 또는 false }
+`.trim();
+
+  const { data, usage } = await callLLMJson<{ duplicate: boolean }>({ userPrompt });
+  return { duplicate: !!data.duplicate, usage };
+}
+
 /**
  * 디렉터(평가원)가 다음 발언자를 결정.
  * 발언권이 남은 평가자 중에서만 고를 수 있음.
@@ -98,7 +140,14 @@ export async function generateSpeech(
       "너는 사회자다. 논의를 정리하거나, 평가자들이 놓친 큰 그림(글의 목적·독자·전체 흐름)을 짚어. 세부 반복은 하지 마.",
   };
 
-  const userPrompt = `
+  // 이미 나온 지적 목록 (특히 본인 발언) — 반복 방지용으로 모델에게 명시
+  const priorPoints =
+    history.length > 0
+      ? history.map((m, i) => `${i + 1}. ${m.speakerName}: ${m.message}`).join("\n")
+      : "(아직 없음)";
+
+  const buildPrompt = (avoid: string) =>
+    `
 너는 "${speaker.name}"로서 글 평가 회의에 참여 중이야.
 
 [너의 역할 - 이것만 집중해]
@@ -107,29 +156,52 @@ ${roleGuide[speakerId]}
 [평가 대상 글]
 ${text}
 
-[지금까지의 대화]
-${formatHistory(history)}
+[이미 나온 지적들 - 절대 반복 금지]
+${priorPoints}
 
 규칙:
-- 앞사람 말을 반복하거나 그냥 "동의해요"라고 하지 마. 반드시 '새로운' 지적을 해.
+- 위 [이미 나온 지적들]과 같은 내용을 다시 말하지 마. 특히 네가 이미 한 지적을 되풀이하지 마.
+- 표현만 바꿔서 같은 얘기를 하는 것도 금지. 아직 아무도 짚지 않은 '새로운' 부분을 지적해.
 - 글에서 구체적인 부분(문장/주장/단어)을 직접 인용하며 말해.
 - 다른 평가자와 의견이 다르면 다르다고 말해도 돼.
 - 한두 문장으로 간결하게, 회의하듯 자연스럽게.
-
+${avoid ? `\n[특히 이 발언은 방금 중복으로 걸렀으니 이것과 다른 내용을 말해]\n"${avoid}"\n` : ""}
 아래 JSON 형식으로만 응답해.
 {
   "message": "너의 발언 (한두 문장, 구체적으로)"
 }
 `.trim();
 
-  const { data, usage } = await callLLMJson<{ message: string }>({
-    systemPrompt: speaker.prompt,
-    userPrompt,
-  });
+  let totalUsage = ZERO_USAGE;
+  let avoid = "";
+  let lastMessage = "";
+  const maxTries = 3;
+
+  for (let attempt = 1; attempt <= maxTries; attempt++) {
+    const { data, usage } = await callLLMJson<{ message: string }>({
+      systemPrompt: speaker.prompt,
+      userPrompt: buildPrompt(avoid),
+    });
+    totalUsage = addUsage(totalUsage, usage);
+
+    const candidate = (data.message ?? "").trim();
+    if (!candidate) continue; // 빈 응답이면 lastMessage 갱신 없이 재시도
+
+    lastMessage = candidate;
+
+    // 첫 발언(대화 시작)이면 비교할 게 없으니 그대로 채택
+    if (history.length === 0) break;
+
+    const dup = await judgeDuplicate(candidate, history);
+    totalUsage = addUsage(totalUsage, dup.usage);
+
+    if (!dup.duplicate) break; // 새로운 지적 → 채택
+    avoid = candidate; // 중복 → 이 문장을 피해서 다시
+  }
 
   return {
-    message: { speakerId, speakerName: speaker.name, message: data.message },
-    usage,
+    message: { speakerId, speakerName: speaker.name, message: lastMessage },
+    usage: totalUsage,
   };
 }
 

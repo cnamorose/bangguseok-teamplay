@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import RoomShell from "@/app/components/RoomShell";
 import Shelf from "./Shelf";
@@ -11,14 +10,7 @@ export default async function BookshelfPage() {
   if (!user) redirect("/login");
 
   return (
-    <RoomShell
-      user={user}
-      actions={
-        <Link href="/create" className="tp-btn-sm">
-          + 새 팀플
-        </Link>
-      }
-    >
+    <RoomShell user={user}>
       <Shelf />
     </RoomShell>
   );
