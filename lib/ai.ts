@@ -1,6 +1,12 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+// 클라이언트를 모듈 로드 시점이 아니라 '처음 호출될 때' 만든다.
+// (빌드 중엔 OPENAI_API_KEY가 없어서, 모듈 스코프에서 만들면 빌드가 깨진다)
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return _openai;
+}
 
 // 기본 모델 (나중에 바꾸고 싶으면 여기만 수정)
 const DEFAULT_MODEL = "gpt-4.1-nano";
@@ -45,7 +51,7 @@ export async function callLLM({
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await openai.chat.completions.create({
+      const response = await getOpenAI().chat.completions.create({
         model,
         // JSON 모드: 모델이 문법적으로 유효한 JSON만 내도록 강제
         ...(jsonMode ? { response_format: { type: "json_object" as const } } : {}),
