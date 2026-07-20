@@ -34,6 +34,69 @@ export default function Assemble() {
 
   const [criticCount, setCriticCount] = useState(0); // 0 = 비평가 안 부름
 
+  // 주제 설정(구체화) 관련
+  const [detail, setDetail] = useState(""); // 초점·관점·톤 등 세부 요청
+  const [related, setRelated] = useState<string[]>([]); // 관련 주제
+  const [recommended, setRecommended] = useState<string[]>([]); // 추천(구체화) 주제
+  const [refining, setRefining] = useState(false);
+  const [topicConfirmed, setTopicConfirmed] = useState(false); // '주제 설정 완료' 눌렀는지
+  const hasSuggestions = related.length > 0 || recommended.length > 0;
+
+  // 주제를 바꾸면 설정 완료를 무효화 (다시 확정하게).
+  // 디테일 요소는 보조라 바꿔도 확정 상태를 유지한다.
+  const editTopic = (v: string) => {
+    setTopic(v);
+    setTopicConfirmed(false);
+  };
+
+  // 주제 구체화: LLM 1회 태워 관련/추천 주제 받아오기
+  const handleRefine = async () => {
+    setError("");
+    if (!topic.trim()) {
+      setError("주제를 입력해주세요.");
+      return;
+    }
+    setRefining(true);
+    try {
+      const res = await fetch("/api/topic/refine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "주제 구체화에 실패했습니다.");
+        return;
+      }
+      setRelated(data.related || []);
+      setRecommended(data.recommended || []);
+    } catch {
+      setError("주제 구체화에 실패했습니다.");
+    } finally {
+      setRefining(false);
+    }
+  };
+
+  // 초기화: 추천 목록만 비움 (주제/디테일은 유지)
+  const clearSuggestions = () => {
+    setRelated([]);
+    setRecommended([]);
+  };
+
+  // 추천 주제를 누르면 주제칸에 채운다
+  const pickSuggestion = (s: string) => editTopic(s);
+
+  // 주제 설정 완료 → 팀 실행하기 잠금 해제 (추천 목록은 정리해서 감춤)
+  const confirmTopic = () => {
+    if (!topic.trim()) {
+      setError("주제를 입력해주세요.");
+      return;
+    }
+    setError("");
+    clearSuggestions();
+    setTopicConfirmed(true);
+  };
+
   const selectPersona = (stage: string, personaId: string) => {
     setSelected((prev) => ({ ...prev, [stage]: personaId }));
     if (stage === "organize" && personaId !== "proofreader") {
@@ -46,6 +109,10 @@ export default function Assemble() {
 
     if (!topic.trim()) {
       setError("주제를 입력해주세요.");
+      return;
+    }
+    if (!topicConfirmed) {
+      setError("먼저 '주제 설정 완료'를 눌러주세요.");
       return;
     }
     if (STAGES.some((s) => !selected[s.key])) {
@@ -67,6 +134,7 @@ export default function Assemble() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           topic,
+          detail,
           teamName,
           searchPersona: selected.search,
           generatePersona: selected.generate,
@@ -124,7 +192,11 @@ export default function Assemble() {
     }
   };
 
-  const progressPercent = Math.round((completedStages / PROGRESS_STAGES.length) * 100);
+  // 다이나믹이라 단계 수가 가변 → 100%를 넘지 않게 캡
+  const progressPercent = Math.min(
+    100,
+    Math.round((completedStages / PROGRESS_STAGES.length) * 100)
+  );
 
   // 실행 중이면 진행바 화면
   if (loading) {
@@ -159,10 +231,87 @@ export default function Assemble() {
           <input
             className="tp-input"
             value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="예: 대학생의 아침 습관"
+            onChange={(e) => editTopic(e.target.value)}
+            placeholder="예: 대학생의 아침 습관 (큰 틀만 던져도 돼요)"
+          />
+          <span className="tp-sub-desc" style={{ margin: 0 }}>
+            큰 틀만 적고 <strong>주제 구체화</strong>를 누르면, 관련·추천 주제를 뽑아드려요.
+          </span>
+        </label>
+
+        {/* 주제 구체화 / 초기화 */}
+        {!hasSuggestions ? (
+          <button
+            type="button"
+            className="tp-btn-outline"
+            onClick={handleRefine}
+            disabled={refining || !topic.trim()}
+          >
+            {refining ? "🔎 주제 뽑는 중..." : "✨ 주제 구체화"}
+          </button>
+        ) : (
+          <button type="button" className="tp-btn-outline" onClick={clearSuggestions} disabled={refining}>
+            ♻️ 초기화
+          </button>
+        )}
+
+        {/* 추천 결과 (클릭하면 주제칸에 채워짐) */}
+        {hasSuggestions && (
+          <div className="tp-sub">
+            {recommended.length > 0 && (
+              <>
+                <p className="tp-sub-title">
+                  ⭐ 추천 주제{" "}
+                  <span style={{ fontWeight: 400, opacity: 0.6 }}>(클릭하면 주제칸에 채워져요)</span>
+                </p>
+                <div className="tp-choices" style={{ marginBottom: related.length > 0 ? 14 : 0 }}>
+                  {recommended.map((s, i) => (
+                    <button key={`r${i}`} type="button" className="tp-chip" onClick={() => pickSuggestion(s)}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {related.length > 0 && (
+              <>
+                <p className="tp-sub-title">🔗 관련 주제</p>
+                <div className="tp-choices">
+                  {related.map((s, i) => (
+                    <button key={`l${i}`} type="button" className="tp-chip" onClick={() => pickSuggestion(s)}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* 디테일 요소 (초점·관점·톤) */}
+        <label className="tp-field">
+          <span className="tp-label">
+            디테일 요소 <span className="tp-optional">(선택)</span>
+          </span>
+          <textarea
+            className="tp-textarea"
+            value={detail}
+            onChange={(e) => setDetail(e.target.value)}
+            placeholder="원하는 초점·관점·톤을 적어주세요. (예: 실천 팁 위주로, 20대 독자에게, 담백한 문체로)"
+            rows={3}
+            style={{ width: "100%", boxSizing: "border-box", minHeight: 76 }}
           />
         </label>
+
+        {/* 주제 설정 완료 (팀 실행하기 잠금 해제) */}
+        <button
+          type="button"
+          className={topicConfirmed ? "tp-btn-outline" : "tp-btn"}
+          onClick={confirmTopic}
+          disabled={!topic.trim()}
+        >
+          {topicConfirmed ? "✅ 주제 설정 완료 (수정하면 다시 눌러주세요)" : "📌 주제 설정 완료"}
+        </button>
 
         <div className="tp-stages">
           <p className="tp-col-title">단계별 팀원</p>
@@ -241,7 +390,17 @@ export default function Assemble() {
 
         {error && <p className="tp-error">{error}</p>}
 
-        <button className="tp-btn" onClick={handleRun}>
+        {!topicConfirmed && (
+          <p className="tp-sub-desc" style={{ margin: 0 }}>
+            🔒 주제 설정을 완료하면 팀을 실행할 수 있어요.
+          </p>
+        )}
+        <button
+          className="tp-btn"
+          onClick={handleRun}
+          disabled={!topicConfirmed}
+          title={!topicConfirmed ? "먼저 '주제 설정 완료'를 눌러주세요." : ""}
+        >
           🚀 팀 실행하기
         </button>
       </div>

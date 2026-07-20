@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import ThemeCustomizer from "./ThemeCustomizer";
+import { applyTheme, loadTheme, saveTheme } from "@/lib/theme";
 
 export interface RoomUser {
   id: string;
   email: string;
   name: string | null;
+  theme?: string | null; // DB에 저장된 StoredTheme JSON 문자열
 }
 
 const NAV = [
@@ -35,7 +38,24 @@ export default function RoomShell({
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
+
+  // 테마 적용: DB(user.theme)를 진실원본으로, localStorage에 미러(무깜빡임용).
+  // FOUC는 layout의 인라인 스크립트(localStorage)가 막고, 여기서 DB값으로 동기화한다.
+  useEffect(() => {
+    if (user.theme) {
+      try {
+        const stored = JSON.parse(user.theme);
+        applyTheme(stored);
+        saveTheme(stored); // localStorage 미러 갱신
+        return;
+      } catch {
+        /* 형식 깨졌으면 localStorage로 폴백 */
+      }
+    }
+    applyTheme(loadTheme());
+  }, [user.theme]);
 
   const current = NAV.find((item) => item.href === pathname);
   const heading = title ?? (current ? `${current.icon} ${current.label}` : "");
@@ -109,6 +129,17 @@ export default function RoomShell({
                 type="button"
                 className="tp-menu-item"
                 role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setThemeOpen(true);
+                }}
+              >
+                🎨 책장 커스텀하기
+              </button>
+              <button
+                type="button"
+                className="tp-menu-item"
+                role="menuitem"
                 onClick={handleLogout}
               >
                 🚪 로그아웃
@@ -129,6 +160,8 @@ export default function RoomShell({
           {children}
         </main>
       </div>
+
+      {themeOpen && <ThemeCustomizer onClose={() => setThemeOpen(false)} />}
     </div>
   );
 }

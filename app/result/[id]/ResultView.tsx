@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { parseSource } from "@/lib/parse-source";
+import { extractArticleText } from "@/lib/result-text";
 
 interface AgentLog {
   id: string;
@@ -33,6 +35,13 @@ const STAGE_LABEL: Record<string, string> = {
   organize: "✨ 정리",
   visualize: "📊 시각화",
   critic: "🎯 비평가",
+  director: "🎬 편집장 결정",
+};
+
+const DIRECTOR_ACTION_LABEL: Record<string, string> = {
+  research: "🔍 추가 리서치 지시",
+  rewrite: "✍️ 다시 쓰기 지시",
+  finalize: "✅ 마무리 결정",
 };
 
 export default function ResultView({ id }: { id: string }) {
@@ -76,6 +85,20 @@ export default function ResultView({ id }: { id: string }) {
               📥 결과물 다운로드
             </a>
           )}
+          <button
+            className="tp-btn-download"
+            onClick={() => {
+              const text = extractArticleText(result.resultData);
+              // 평가 페이지가 마운트될 때 읽어서 주제/글을 자동으로 채운다.
+              sessionStorage.setItem(
+                "evaluate:prefill",
+                JSON.stringify({ topic: result.topic, text })
+              );
+              router.push("/evaluate");
+            }}
+          >
+            🧑‍⚖️ 평가단에게 평가받기
+          </button>
           <button className="tp-btn-outline" onClick={() => router.push("/bookshelf")}>
             📚 책장으로
           </button>
@@ -110,12 +133,9 @@ function StageOutput({ stage, output }: { stage: string; output: any }) {
         <strong>출처</strong>
         <ul>
           {output.sources?.map((s: string, i: number) => {
-            // "제목 (https://...)" 형태에서 URL 추출
-            const match = s.match(/^(.*)\s\((https?:\/\/[^)]+)\)$/);
+            const { title, url } = parseSource(s);
 
-            if (match) {
-              const [, title, url] = match;
-
+            if (url) {
               return (
                 <li key={i}>
                   <a
@@ -130,7 +150,7 @@ function StageOutput({ stage, output }: { stage: string; output: any }) {
               );
             }
 
-            // 형식이 안 맞으면 그냥 텍스트
+            // URL이 없으면 그냥 텍스트
             return <li key={i}>{s}</li>;
           })}
         </ul>
@@ -162,6 +182,22 @@ function StageOutput({ stage, output }: { stage: string; output: any }) {
             </ul>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (stage === "director") {
+    return (
+      <div>
+        <div className="tp-badge tp-badge-pass">
+          {DIRECTOR_ACTION_LABEL[output.action] || output.action}
+        </div>
+        <p className="tp-entry-note">{output.reason}</p>
+        {output.query && (
+          <p className="tp-entry-note">
+            <strong>검색어:</strong> {output.query}
+          </p>
+        )}
       </div>
     );
   }

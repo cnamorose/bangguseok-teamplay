@@ -42,7 +42,7 @@ export async function getCurrentUser() {
 
   const user = await prisma.user.findUnique({
     where: { id: payload.userId },
-    select: { id: true, email: true, name: true },
+    select: { id: true, email: true, name: true, theme: true },
   });
 
   return user; // 있으면 유저 객체, 없으면 null

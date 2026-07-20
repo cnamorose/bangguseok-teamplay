@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { text, librarianTurns, wordsmithTurns } = await req.json();
+  const { text, librarianTurns, wordsmithTurns, userOpinion } = await req.json();
 
   if (!text) {
     return new Response(JSON.stringify({ error: "평가할 글이 필요합니다." }), {
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 
         // 논의를 취합한 수정본 생성 (내용이 있을 때만 전송)
         send({ type: "progress", message: "✨ 논의를 반영한 수정본을 만드는 중..." });
-        const revision = await generateRevision(text, history);
+        const revision = await generateRevision(text, history, userOpinion);
         if (revision.revised.trim()) {
           send({ type: "revision", revised: revision.revised });
         }

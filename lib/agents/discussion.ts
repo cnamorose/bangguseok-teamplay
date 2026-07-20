@@ -246,8 +246,17 @@ ${formatHistory(history)}
  */
 export async function generateRevision(
   originalText: string,
-  history: DiscussionMessage[]
+  history: DiscussionMessage[],
+  userOpinion?: string
 ): Promise<{ revised: string; usage: LLMUsage }> {
+  // 사용자가 직접 남긴 의견이 있으면 '최우선 요구사항'으로 못박는다.
+  const opinionBlock = userOpinion?.trim()
+    ? `
+[글쓴이(사용자)의 요구사항 - 최우선 반영]
+${userOpinion.trim()}
+`
+    : "";
+
   const userPrompt = `
 아래는 원본 글과, 평가단이 이 글을 두고 나눈 회의 내용이야.
 회의에서 나온 지적들을 최대한 반영해서, 원본 글을 개선한 '수정본'을 작성해줘.
@@ -257,9 +266,13 @@ ${originalText}
 
 [평가단 회의 내용]
 ${formatHistory(history)}
-
+${opinionBlock}
 규칙:
-- 회의에서 지적된 문제(사실성, 문장, 구성 등)를 실제로 반영해서 고쳐.
+- 회의에서 지적된 문제(사실성, 문장, 구성 등)를 실제로 반영해서 고쳐.${
+    opinionBlock
+      ? "\n- 위 [글쓴이의 요구사항]은 평가단 지적보다 우선해서 반드시 반영해. 회의 내용과 충돌하면 글쓴이의 요구를 따라."
+      : ""
+  }
 - 원본의 핵심 주제와 논지는 유지해.
 - 완성된 하나의 글로 작성해. (지적 목록이 아니라 실제 개선된 글)
 

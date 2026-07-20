@@ -1,11 +1,8 @@
 import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { runSearch } from "@/lib/agents/search";
-import { runGenerate } from "@/lib/agents/generate";
-import { runOrganize } from "@/lib/agents/organize";
-import { runVisualize } from "@/lib/agents/visualize";
-import { runCritic } from "@/lib/agents/critic";
+import { runDynamicGeneration } from "@/lib/agents/orchestrator";
+import { LLMUsage } from "@/lib/ai";
 import { Prisma } from "@prisma/client";
 
 // 파이프라인이 길어 시간이 걸리므로 함수 실행 시간을 늘린다
@@ -20,7 +17,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { topic, teamName, searchPersona, generatePersona, organizePersona, visualizePersona, organizeStyle, criticCount } =
+  const { topic, detail, teamName, searchPersona, generatePersona, organizePersona, visualizePersona, organizeStyle, criticCount } =
     await req.json();
 
   if (!topic || !searchPersona || !generatePersona || !organizePersona || !visualizePersona) {
@@ -34,8 +31,6 @@ export async function POST(req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
-
-      // 프론트에 이벤트 하나 보내는 헬퍼
       const send = (data: object) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
       };
@@ -45,7 +40,6 @@ export async function POST(req: NextRequest) {
         const assembly = await prisma.assembly.create({
           data: {
             userId: user.id,
-            // 직접 지은 이름이 없으면 주제로 자동 작명
             name: typeof teamName === "string" && teamName.trim() ? teamName.trim() : `${topic} 팀`,
             searchPersona, generatePersona, organizePersona, visualizePersona,
           },
@@ -54,27 +48,22 @@ export async function POST(req: NextRequest) {
           data: { assemblyId: assembly.id, userId: user.id, topic },
         });
 
-        // 단계 실행 + agent_log 저장 + 진행상황 전송 헬퍼
-        async function runStage<T>(
+        // 오케스트레이터가 각 단계 결과를 저장할 콜백
+        const persist = async (
           stage: string,
           persona: string,
-          message: string,
-          fn: () => Promise<{ output: T; usage: import("@/lib/ai").LLMUsage | null }>
-        ): Promise<T> {
-          send({ type: "progress", stage, message });
-          const startedAt = new Date();
-          const { output, usage } = await fn();
-          const completedAt = new Date();
-
+          output: unknown,
+          usage: LLMUsage | null,
+          countProgress: boolean
+        ) => {
+          const now = new Date();
           const log = await prisma.agentLog.create({
             data: {
               resultId: result.id, stage, persona, status: "success",
-              output: output as unknown as Prisma.InputJsonValue,
-              startedAt, completedAt,
+              output: output as Prisma.InputJsonValue,
+              startedAt: now, completedAt: now,
             },
           });
-
-          // 진짜 토큰/비용 저장
           await prisma.apiUsage.create({
             data: {
               agentLogId: log.id,
@@ -84,69 +73,29 @@ export async function POST(req: NextRequest) {
               cost: usage?.cost ?? 0,
             },
           });
+          if (countProgress) send({ type: "done", stage });
+        };
 
-          send({ type: "done", stage });
-          return output;
-        }
+        // 저장된 topic은 깨끗하게 두고, 생성 단계에만 사용자의 세부 요청(초점·관점·톤)을 덧붙인다.
+        const detailText = typeof detail === "string" ? detail.trim() : "";
+        const topicForGen = detailText
+          ? `${topic}\n\n[글쓴이의 세부 요청 — 초점·관점·톤] ${detailText}`
+          : topic;
 
-        const search = await runStage("search", searchPersona, "🔍 서치 모듈이 열심히 검색중이다...", () =>
-          runSearch(topic, searchPersona)
-        );
-        let generate = await runStage("generate", generatePersona, "📝 이제 작성을 해볼까?", () =>
-          runGenerate(topic, generatePersona, search)
-        );
-        // 비평가 루프 (criticCount만큼, 통과하면 조기 종료)
-        const critics = criticCount || 0;
-        for (let round = 1; round <= critics; round++) {
-          send({ type: "progress", stage: "critic", message: `🎯 비평가 ${round}번이 초안을 살펴보는 중...` });
-          const startedAt = new Date();
-          const { output: critique, usage: criticUsage } = await runCritic(generate, round);
-          const completedAt = new Date();
-
-          const criticLog = await prisma.agentLog.create({
-            data: {
-              resultId: result.id, stage: "critic", persona: `critic-${round}`,
-              status: "success",
-              output: critique as unknown as Prisma.InputJsonValue,
-              startedAt, completedAt,
-            },
-          });
-          await prisma.apiUsage.create({
-            data: {
-              agentLogId: criticLog.id, provider: "openai",
-              tokensIn: criticUsage.inputTokens,
-              tokensOut: criticUsage.outputTokens,
-              cost: criticUsage.cost,
-            },
-          });
-
-          send({ type: "critic_comment", round, comment: critique.comment, pass: critique.pass });
-
-          if (critique.pass) {
-            send({ type: "progress", stage: "critic", message: `✅ 비평가 ${round}번: 통과!` });
-            break;
+        // 편집장(지휘자) 주도 다이나믹 생성
+        const finalData = await runDynamicGeneration(
+          topicForGen,
+          { searchPersona, generatePersona, organizePersona, visualizePersona },
+          { maxRounds: criticCount || 0, organizeStyle, maxResearch: 2, maxRewrite: 2 },
+          {
+            progress: (message, stage) => send({ type: "progress", stage, message }),
+            persist,
           }
-
-          generate = await runStage("generate", generatePersona, `✍️ 피드백 받고 다시 쓰는 중... (${round}차 수정)`, () =>
-            runGenerate(topic, generatePersona, search, {
-              previousDraft: generate,
-              feedback: critique.feedback,
-            })
-          );
-        }
-
-        // 정리 (루프 끝난 최종 초안을 다듬음)
-        const organize = await runStage("organize", organizePersona, "✨ 좋아! 정리해보자!", () =>
-          runOrganize(organizePersona, generate, organizeStyle)
-        );
-        const visualize = await runStage("visualize", visualizePersona, "📊 괜찮은 초안을 만들자", () =>
-          runVisualize(visualizePersona, organize)
         );
 
         // 결과물은 다운로드 누를 때 즉석 생성한다 (서버리스는 디스크에 못 저장)
         send({ type: "progress", stage: "file", message: "📦 결과물을 준비하는 중..." });
 
-        const finalData = { search, generate, organize, visualize };
         await prisma.result.update({
           where: { id: result.id },
           data: {

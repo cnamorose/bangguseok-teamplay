@@ -20,6 +20,14 @@
   --text:         #3f2e20; /* 본문 텍스트    */
   --text-muted:   #8a7a6a; /* 보조 텍스트    */
 
+  /* 책 표지 색 (테마가 --book-1~6을 덮어씀) */
+  --book-1: #c67a52;
+  --book-2: #d3a85e;
+  --book-3: #8faf74;
+  --book-4: #6d94b0;
+  --book-5: #9a7bb5;
+  --book-6: #b05f5f;
+
   /* 형태 */
   --topbar-h:    80px; /* 모든 페이지 공통 상단바 높이 */
   --border-w:    3px;
@@ -401,6 +409,145 @@ body {
   box-shadow: 0 8px 0 rgba(42, 31, 23, 0.28);
 }
 
+/* ── 뷰 전환 슬라이딩 토글 (책장 / 평가단자료) ── */
+.tp-view-toggle {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  padding: 4px;
+  background: var(--cream);
+  border: var(--border-w) solid var(--ink);
+  border-radius: 999px;
+  box-shadow: var(--shadow-hard);
+}
+/* 슬라이딩 인디케이터 (활성 탭 위치·너비를 JS로 측정해 left/width 인라인 지정) */
+.tp-view-toggle-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  background: var(--sage);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  transition: left .22s cubic-bezier(.4, 0, .2, 1), width .22s cubic-bezier(.4, 0, .2, 1);
+}
+.tp-view-toggle-btn {
+  position: relative;
+  z-index: 1;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: inherit;
+  white-space: nowrap;
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color .18s;
+}
+.tp-view-toggle-btn.is-active { color: #fff; }
+.tp-view-toggle-btn:focus-visible { outline: 3px solid var(--sage-dark); outline-offset: 2px; border-radius: 999px; }
+
+/* ── 평가단자료(클립보드) 카드 그리드 ── */
+.tp-clip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
+}
+.tp-clip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 16px 16px;
+  text-align: left;
+  background: var(--paper);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  cursor: pointer;
+  transition: transform .06s, box-shadow .1s;
+}
+.tp-clip:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+/* 위쪽 집게 장식 */
+.tp-clip-hang {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 46px;
+  height: 14px;
+  background: var(--wood);
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+}
+.tp-clip-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tp-clip-score { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+.tp-clip-score strong { font-size: 20px; color: var(--sage-dark); }
+.tp-clip-date { margin: 0; font-size: 12px; color: var(--text-muted); }
+
+/* ── 평가단자료 상세 ── */
+.tp-clipview { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.tp-clipview-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tp-clipview-title { margin: 0; font-size: 22px; font-weight: 800; color: var(--text); }
+.tp-clipview-date { margin: 4px 0 0; font-size: 13px; color: var(--text-muted); }
+.tp-clipview-scores { display: grid; gap: 12px; }
+.tp-clipview-judge {
+  padding: 14px 16px;
+  background: var(--paper);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+}
+.tp-clipview-judge-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.tp-clipview-judge-face { font-size: 18px; }
+.tp-clipview-judge-name { font-weight: 800; color: var(--text); }
+.tp-clipview-judge-score {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--sage-dark);
+}
+.tp-clipview-judge-comment { margin: 0; line-height: 1.6; color: var(--text); }
+.tp-clipview-src { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
+.tp-clipview-block {
+  background: var(--cream);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.tp-clipview-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--ivory);
+  border-bottom: 2px solid var(--ink);
+}
+.tp-clipview-body {
+  padding: 14px 16px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
 /* ── 책 (표지가 정면으로 보이게) ── */
 .tp-book-cover {
   position: relative;
@@ -501,6 +648,8 @@ body {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   overflow-y: auto;
+  /* 테두리 있는 둥근 스크롤 박스가 모서리에서 내용을 못 자르는 Chrome 이슈 방지 */
+  transform: translateZ(0);
 }
 .tp-col-title { margin: 0; font-size: 15px; font-weight: 800; color: var(--text); }
 
@@ -710,6 +859,13 @@ body {
 }
 .tp-upload:hover { background: #fff; color: var(--text); }
 .tp-upload-busy { opacity: .6; cursor: wait; }
+/* 파일을 끌고 위에 올렸을 때 */
+.tp-upload-drag {
+  background: rgba(127, 160, 106, 0.16);
+  border-color: var(--sage-dark);
+  border-style: solid;
+  color: var(--sage-dark);
+}
 
 /* 글 입력칸이 좌측 컬럼 높이를 채우게 */
 .tp-field-grow { flex: 1; min-height: 0; }
@@ -725,6 +881,10 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .tp-charcount strong { color: var(--text); font-weight: 800; }
+
+/* 자동 저장 상태 문구 */
+.tp-save-note { margin: -6px 0 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--sage-dark); }
+.tp-save-note-error { color: #b04a3a; }
 
 /* ── 점수판 (평가 받기 아래) ── */
 .tp-scoreboard {
@@ -836,6 +996,240 @@ body {
   transform: translate(-1px, -1px);
 }
 .tp-pager-dot:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ── 책장에서 꺼내오기 팝업 ── */
+.tp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(42, 31, 23, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.tp-modal {
+  width: 100%;
+  max-width: 460px;
+  background: var(--paper);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tp-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--cream);
+  border-bottom: 2px solid var(--ink);
+}
+.tp-modal-title { font-size: 16px; font-weight: 800; color: var(--text); }
+.tp-modal-close {
+  width: 30px;
+  height: 30px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.tp-modal-close:hover { background: var(--cream); }
+.tp-modal-body {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* 5행 기준으로 높이를 잡아, 마지막 페이지(항목이 적어도) 모달이 줄어들지 않게 */
+  min-height: 356px;
+  justify-content: flex-start;
+}
+.tp-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: opacity .12s;
+}
+/* 페이지 넘기는 동안: 목록은 그대로 두고 살짝 흐리게 + 클릭만 막음 (모달은 안 흔들림) */
+.tp-picker-list-busy { opacity: .45; pointer-events: none; }
+
+/* ── 책장 커스텀(테마 세트) 팝업 ── */
+.tp-theme-body { min-height: 0; }
+.tp-theme-hint { margin: 0 0 4px; font-size: 13px; color: var(--text-muted); }
+.tp-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.tp-theme-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: transform .05s, box-shadow .1s;
+}
+.tp-theme-card:hover { transform: translate(-1px, -1px); box-shadow: var(--shadow-hard); }
+.tp-theme-card[aria-pressed="true"] {
+  box-shadow: var(--shadow-hard);
+  transform: translate(-1px, -1px);
+  outline: 3px solid var(--sage);
+  outline-offset: 1px;
+}
+/* 팔레트 미리보기: 배경색 판 위에 상단바/책장/버튼 색 막대 3개 */
+.tp-theme-swatch {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+  height: 40px;
+  padding: 5px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+}
+.tp-theme-swatch > span {
+  flex: 1;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+.tp-theme-name { font-size: 13px; font-weight: 800; color: var(--text); }
+.tp-theme-check {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--sage-dark);
+}
+
+@media (max-width: 520px) {
+  .tp-theme-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* 완전 커스텀 섹션 */
+.tp-theme-hint-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 2px solid rgba(42, 31, 23, 0.15);
+}
+.tp-theme-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--sage-dark);
+  background: var(--cream);
+  border: 1.5px solid var(--sage-dark);
+  border-radius: 20px;
+  padding: 1px 8px;
+}
+.tp-custom-section {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+}
+.tp-custom-subtitle {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+}
+.tp-custom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 12px;
+}
+/* 책 표지 스와치 줄 */
+.tp-book-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.tp-book-pick { display: inline-flex; cursor: pointer; }
+.tp-book-pick .tp-theme-color { width: 34px; height: 34px; }
+.tp-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.tp-custom-label { font-size: 12px; font-weight: 700; color: var(--text); }
+/* 네이티브 컬러 인풋을 칩처럼 */
+.tp-theme-color {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: none;
+  cursor: pointer;
+}
+.tp-theme-color::-webkit-color-swatch-wrapper { padding: 2px; }
+.tp-theme-color::-webkit-color-swatch { border: none; border-radius: 3px; }
+.tp-theme-color::-moz-color-swatch { border: none; border-radius: 3px; }
+
+@media (max-width: 520px) {
+  .tp-custom-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.tp-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 2px solid rgba(42, 31, 23, 0.15);
+}
+.tp-picker-page {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.tp-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background .12s, transform .05s;
+}
+.tp-picker-row:hover:not(:disabled) {
+  background: var(--cream);
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-hard);
+}
+.tp-picker-row:disabled { opacity: .5; cursor: wait; }
+.tp-picker-row-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tp-picker-row-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-picker-row-meta { font-size: 12px; color: var(--text-muted); }
+.tp-picker-row-arrow {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--sage-dark);
+}
 .tp-page-name { margin: 0; font-size: 15px; font-weight: 800; color: var(--text); }
 
 /* ── 평가자 명단 (미리 보이고, 도착하면 채워짐) ── */
@@ -889,6 +1283,41 @@ body {
 .tp-judge-typing span:nth-child(3) { animation-delay: .4s; }
 
 /* ── 참고 자료 목록 ── */
+/* 세부 항목 점수(rubric) 막대 — 평가 카드 / 클립보드 공용 */
+.tp-rubric {
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.tp-rubric-row {
+  display: grid;
+  grid-template-columns: 84px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.tp-rubric-label { font-size: 13px; font-weight: 700; color: var(--text); }
+.tp-rubric-bar {
+  height: 8px;
+  background: rgba(42, 31, 23, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.tp-rubric-fill {
+  display: block;
+  height: 100%;
+  background: var(--sage);
+  border-radius: 999px;
+  transition: width .35s ease;
+}
+.tp-rubric-score {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.tp-rubric-max { font-weight: 600; color: var(--text-muted); }
+
 .tp-eval-src { margin: 12px 0 0; }
 .tp-eval-src-title { margin: 0 0 4px; font-size: 13px; font-weight: 800; color: var(--text-muted); }
 .tp-eval-src ul { margin: 0; padding-left: 18px; }

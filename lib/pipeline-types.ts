@@ -32,6 +32,13 @@ export interface CriticResult {
   comment: string;     // 대화체 코멘트 (화면에 캐릭터 대사로 보여줄 것)
 }
 
+// 채점 세부 항목 (rubric 한 줄)
+export interface ScoreBreakdown {
+  label: string;    // 화면 표시명 (예: "논리성")
+  score: number;    // 이 항목 점수
+  maxScore: number; // 이 항목 만점
+}
+
 // 개별 평가자의 평가 결과
 export interface EvaluationResult {
   evaluatorId: string;
@@ -40,5 +47,6 @@ export interface EvaluationResult {
   score: number;
   maxScore: number;
   comment: string;
+  breakdown?: ScoreBreakdown[]; // 세부 항목별 점수 (rubric)
   sources?: string[]; // 서치 평가자만: 검색한 출처
 }

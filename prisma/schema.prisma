@@ -17,6 +17,7 @@ model User {
   email     String   @unique
   password  String
   name      String?
+  theme     String?  // 책장 테마 (StoredTheme JSON 문자열)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -90,6 +91,7 @@ model Evaluation {
   topic     String
   text      String
   results   Json?
+  revised   String?  // 논의 후 수정본 (있을 때만)
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

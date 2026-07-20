@@ -1,8 +1,6 @@
 import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { evaluateChief, evaluateSearch, evaluateOrganize } from "@/lib/agents/evaluator";
-import { Prisma } from "@prisma/client";
 
 // 평가단 3명 호출이 길어질 수 있어 실행 시간을 늘린다
 export const maxDuration = 60;
@@ -53,17 +51,8 @@ export async function POST(req: NextRequest) {
         evaluations.push(organize.result);
         send({ type: "evaluation", result: organize.result });
 
-        // DB에 평가 기록 저장
-        const evaluation = await prisma.evaluation.create({
-          data: {
-            userId: user.id,
-            topic,
-            text,
-            results: evaluations as unknown as Prisma.InputJsonValue,
-          },
-        });
-
-        send({ type: "complete", evaluationId: evaluation.id, evaluations });
+        // 저장은 사용자가 "클립보드에 저장"을 눌렀을 때만 (/api/evaluate/save)
+        send({ type: "complete", evaluations });
         controller.close();
       } catch (error) {
         console.error("평가 에러:", error);
