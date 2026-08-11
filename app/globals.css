@@ -215,6 +215,15 @@ body {
   box-shadow: var(--shadow-hard);
 }
 
+/* ── 방 이동 토글 (메뉴바 상단) ── */
+/* 책장 탭과 같은 컴포넌트를 쓰되, 좁은 메뉴바에 맞게 꽉 채우고 살짝 줄인다 */
+.tp-mode-toggle { width: 100%; }
+.tp-mode-toggle .tp-view-toggle-btn {
+  flex: 1;
+  padding: 8px 6px;
+  font-size: 13px;
+}
+
 /* ── 우측 영역 ── */
 /* 뷰포트 높이에 가둬서, 넘치는 내용은 바깥이 아니라 .tp-content 안에서만 스크롤 */
 .tp-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; max-height: 100vh; }

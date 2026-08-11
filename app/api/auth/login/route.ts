@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { rateLimit, resetRateLimit, getClientIp } from "@/lib/rateLimit";
+import { homeOf } from "@/lib/modes";
 
 // 로그인 시도 제한: IP+이메일 기준 15분 동안 10회까지
 const LOGIN_LIMIT = 10;
@@ -88,7 +89,8 @@ export async function POST(req: NextRequest) {
       {
         message: "로그인 성공",
         user: { id: user.id, email: user.email, name: user.name },
-        redirectTo: "/bookshelf",
+        // 마지막으로 있던 방으로 보낸다
+        redirectTo: homeOf(user.mode),
       },
       { status: 200 }
     );

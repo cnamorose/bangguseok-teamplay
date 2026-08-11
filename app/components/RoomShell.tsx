@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import ThemeCustomizer from "./ThemeCustomizer";
+import SegmentedToggle from "./SegmentedToggle";
 import { applyTheme, loadTheme, saveTheme } from "@/lib/theme";
+import { MODES, MODE_LIST, ModeId, modeFromPath } from "@/lib/modes";
 
 export interface RoomUser {
   id: string;
@@ -12,12 +14,6 @@ export interface RoomUser {
   name: string | null;
   theme?: string | null; // DB에 저장된 StoredTheme JSON 문자열
 }
-
-const NAV = [
-  { href: "/bookshelf", icon: "📚", label: "책장" },
-  { href: "/create", icon: "✍️", label: "새로 만들기" },
-  { href: "/evaluate", icon: "🧑‍⚖️", label: "평가단" },
-];
 
 export default function RoomShell({
   user,
@@ -57,8 +53,25 @@ export default function RoomShell({
     applyTheme(loadTheme());
   }, [user.theme]);
 
-  const current = NAV.find((item) => item.href === pathname);
+  // 지금 어느 방인지는 URL이 정한다 (DB의 user.mode는 '어디로 보낼지' 기억용일 뿐)
+  const mode = modeFromPath(pathname);
+  const nav = MODES[mode].nav;
+
+  const current = nav.find((item) => item.href === pathname);
   const heading = title ?? (current ? `${current.icon} ${current.label}` : "");
+
+  // 방 이동: URL을 바꾸고, 다음에 들어올 때를 위해 DB에도 기억시킨다
+  const switchMode = (next: ModeId) => {
+    if (next === mode) return;
+    router.push(MODES[next].home);
+    fetch("/api/user/mode", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: next }),
+    }).catch(() => {
+      /* 기억에 실패해도 이동 자체는 정상 — 조용히 넘어간다 */
+    });
+  };
 
   // 드롭다운 바깥을 클릭하거나 ESC를 누르면 닫기
   useEffect(() => {
@@ -93,8 +106,16 @@ export default function RoomShell({
           🏠 <span>방구석 팀플</span>
         </Link>
 
+        <SegmentedToggle
+          className="tp-mode-toggle"
+          ariaLabel="방 이동"
+          value={mode}
+          onChange={switchMode}
+          options={MODE_LIST.map((m) => ({ value: m.id, label: `${m.emoji} ${m.label}` }))}
+        />
+
         <nav className="tp-nav">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}

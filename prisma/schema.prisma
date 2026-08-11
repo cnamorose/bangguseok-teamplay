@@ -18,6 +18,7 @@ model User {
   password  String
   name      String?
   theme     String?  // 책장 테마 (StoredTheme JSON 문자열)
+  mode      String   @default("study") // 마지막으로 있던 방 (study | career)
   tokenVersion Int   @default(0) // 로그아웃 시 +1 → 발급된 모든 JWT 무효화
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -42,21 +43,28 @@ model Assembly {
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   results Result[]
+
+  @@index([userId])
 }
 
 model Result {
   id         String   @id @default(uuid())
-  assemblyId String
+  assemblyId String?  // 취업방은 팀을 조립하지 않으므로 없을 수 있다
   userId     String
+  mode       String   @default("study")   // 어느 방에서 만들었나 (study | career)
+  kind       String   @default("article") // article | company | essay | interview
   topic      String
   resultData Json?
   filePath   String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  assembly  Assembly   @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+  assembly  Assembly?  @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   agentLogs AgentLog[]
+
+  @@index([userId, mode, createdAt(sort: Desc)]) // 책장 목록
+  @@index([assemblyId])
 }
 
 model AgentLog {
@@ -65,6 +73,7 @@ model AgentLog {
   stage       String
   persona     String
   status      String    @default("pending")
+  error       String?   // 실패했을 때 사유 (성공이면 null)
   output      Json?
   startedAt   DateTime?
   completedAt DateTime?
@@ -72,6 +81,8 @@ model AgentLog {
 
   result   Result     @relation(fields: [resultId], references: [id], onDelete: Cascade)
   apiUsage ApiUsage[]
+
+  @@index([resultId, startedAt])
 }
 
 model ApiUsage {
@@ -84,16 +95,24 @@ model ApiUsage {
   createdAt  DateTime @default(now())
 
   agentLog AgentLog @relation(fields: [agentLogId], references: [id], onDelete: Cascade)
+
+  @@index([agentLogId])
 }
 
 model Evaluation {
-  id        String   @id @default(uuid())
-  userId    String
-  topic     String
-  text      String
-  results   Json?
-  revised   String?  // 논의 후 수정본 (있을 때만)
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  mode       String   @default("study") // 어느 방에서 받은 평가인가
+  topic      String
+  text       String
+  results    Json?
+  revised    String?  // 논의 후 수정본 (있을 때만)
+  targetType String?  // 무엇을 평가했나 (essay | interview). 낱장 평가면 null
+  targetId   String?
+  createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, mode, createdAt(sort: Desc)])
+  @@index([targetType, targetId])
 }

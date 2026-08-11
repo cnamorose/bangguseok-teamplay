@@ -59,7 +59,7 @@ export async function getCurrentUser() {
 
   const user = await prisma.user.findUnique({
     where: { id: payload.userId },
-    select: { id: true, email: true, name: true, theme: true, tokenVersion: true },
+    select: { id: true, email: true, name: true, theme: true, mode: true, tokenVersion: true },
   });
   if (!user) return null;
 
@@ -67,5 +67,5 @@ export async function getCurrentUser() {
   if ((payload.tokenVersion ?? 0) !== user.tokenVersion) return null;
 
   // tokenVersion은 검증용이므로 밖으로 내보내지 않는다
-  return { id: user.id, email: user.email, name: user.name, theme: user.theme };
+  return { id: user.id, email: user.email, name: user.name, theme: user.theme, mode: user.mode };
 }
