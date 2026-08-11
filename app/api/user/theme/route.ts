@@ -17,9 +17,15 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "잘못된 테마 형식입니다." }, { status: 400 });
     }
 
+    // 정상적인 StoredTheme은 1KB 미만 → 그 이상은 DB 부풀리기 방지 차원에서 거부
+    const serialized = theme === null ? null : JSON.stringify(theme);
+    if (serialized !== null && serialized.length > 10_000) {
+      return NextResponse.json({ error: "테마 데이터가 너무 큽니다." }, { status: 400 });
+    }
+
     await prisma.user.update({
       where: { id: user.id },
-      data: { theme: theme === null ? null : JSON.stringify(theme) },
+      data: { theme: serialized },
     });
 
     return NextResponse.json({ ok: true }, { status: 200 });

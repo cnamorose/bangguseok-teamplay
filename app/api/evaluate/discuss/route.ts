@@ -7,9 +7,28 @@ import {
   generateRevision,  
   DiscussionMessage,
 } from "@/lib/agents/discussion";
+import { rateLimit, tooManyResponse } from "@/lib/rateLimit";
 
 // 회의(여러 발언 + 중복검사 + 수정본)가 길어서 실행 시간을 늘린다
 export const maxDuration = 60;
+
+// 발언 수만큼 LLM을 반복 호출 → 유저당 10분에 10회
+const DISCUSS_LIMIT = 10;
+const DISCUSS_WINDOW_MS = 10 * 60 * 1000;
+
+// 입력 상한 (토큰 비용 폭주 방지).
+// 특히 발언권 수는 그대로 두면 요청 하나로 LLM 호출을 무한정
+// 늘릴 수 있으므로 반드시 서버에서 상한을 강제한다.
+const MAX_TEXT_LEN = 20000;
+const MAX_OPINION_LEN = 2000;
+const MAX_TURNS_PER_SPEAKER = 5;
+const MAX_TARGET_LENGTH = 20000;
+
+/** 클라이언트가 보낸 발언권 수를 0~상한 사이 정수로 강제 */
+function clampTurns(value: unknown): number {
+  const n = Math.floor(Number(value) || 0);
+  return Math.min(Math.max(n, 0), MAX_TURNS_PER_SPEAKER);
+}
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -20,14 +39,27 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { text, librarianTurns, wordsmithTurns, userOpinion } = await req.json();
+  const rl = rateLimit(`discuss:${user.id}`, DISCUSS_LIMIT, DISCUSS_WINDOW_MS);
+  if (!rl.allowed) return tooManyResponse(rl.retryAfterSec);
 
-  if (!text) {
+  const { text: rawText, librarianTurns, wordsmithTurns, userOpinion, targetLength } = await req.json();
+
+  if (!rawText) {
     return new Response(JSON.stringify({ error: "평가할 글이 필요합니다." }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
+  if (String(rawText).length > MAX_TEXT_LEN) {
+    return new Response(
+      JSON.stringify({ error: `글이 너무 길어요. (최대 ${MAX_TEXT_LEN.toLocaleString()}자)` }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const text = String(rawText);
+  const opinion =
+    typeof userOpinion === "string" ? userOpinion.slice(0, MAX_OPINION_LEN) : undefined;
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -39,8 +71,8 @@ export async function POST(req: NextRequest) {
       try {
         const history: DiscussionMessage[] = [];
         const remaining = {
-          librarian: librarianTurns || 0,
-          wordsmith: wordsmithTurns || 0,
+          librarian: clampTurns(librarianTurns),
+          wordsmith: clampTurns(wordsmithTurns),
         };
 
         // 안전장치: 발언권 총합 + 평가원 여유분만큼만 (무한 방지)
@@ -90,7 +122,14 @@ export async function POST(req: NextRequest) {
 
         // 논의를 취합한 수정본 생성 (내용이 있을 때만 전송)
         send({ type: "progress", message: "✨ 논의를 반영한 수정본을 만드는 중..." });
-        const revision = await generateRevision(text, history, userOpinion);
+        const revision = await generateRevision(
+          text,
+          history,
+          opinion,
+          Number(targetLength) > 0
+            ? Math.min(Number(targetLength), MAX_TARGET_LENGTH)
+            : undefined
+        );
         if (revision.revised.trim()) {
           send({ type: "revision", revised: revision.revised });
         }

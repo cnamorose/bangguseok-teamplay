@@ -1,10 +1,16 @@
 import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { callLLMJson } from "@/lib/ai";
+import { rateLimit, tooManyResponse } from "@/lib/rateLimit";
 
 // 주제 구체화: 사용자가 던진 큰 틀의 주제를 받아
 // 관련 주제 + 더 구체화된 추천 주제를 제안한다. (LLM 1회)
 export const maxDuration = 30;
+
+// LLM 1회짜리 가벼운 라우트 → 유저당 10분에 30회
+const REFINE_LIMIT = 30;
+const REFINE_WINDOW_MS = 10 * 60 * 1000;
+const MAX_TOPIC_LEN = 200;
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -15,6 +21,9 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  const rl = rateLimit(`refine:${user.id}`, REFINE_LIMIT, REFINE_WINDOW_MS);
+  if (!rl.allowed) return tooManyResponse(rl.retryAfterSec);
+
   const { topic } = await req.json();
   if (!topic || !String(topic).trim()) {
     return new Response(JSON.stringify({ error: "주제를 입력해주세요." }), {
@@ -24,7 +33,7 @@ export async function POST(req: NextRequest) {
   }
 
   const userPrompt = `
-사용자가 글쓰기 주제로 "${String(topic).trim()}"을 입력했어.
+사용자가 글쓰기 주제로 "${String(topic).trim().slice(0, MAX_TOPIC_LEN)}"을 입력했어.
 이건 큰 틀이라 그대로 쓰기엔 막연해. 글감을 좁혀 주는 제안을 만들어줘.
 
 1) related — 이 주제와 가까운 '인접·하위 주제' 4개. 다른 각도로 넓혀 볼 수 있는 것들.

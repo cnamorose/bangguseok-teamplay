@@ -1,9 +1,18 @@
 import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { evaluateChief, evaluateSearch, evaluateOrganize } from "@/lib/agents/evaluator";
+import { rateLimit, tooManyResponse } from "@/lib/rateLimit";
 
 // 평가단 3명 호출이 길어질 수 있어 실행 시간을 늘린다
 export const maxDuration = 60;
+
+// LLM 3회 이상 호출 → 유저당 10분에 10회
+const EVALUATE_LIMIT = 10;
+const EVALUATE_WINDOW_MS = 10 * 60 * 1000;
+
+// 입력 상한 (토큰 비용 폭주 방지)
+const MAX_TOPIC_LEN = 200;
+const MAX_TEXT_LEN = 20000;
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -14,14 +23,27 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { topic, text } = await req.json();
+  const rl = rateLimit(`evaluate:${user.id}`, EVALUATE_LIMIT, EVALUATE_WINDOW_MS);
+  if (!rl.allowed) return tooManyResponse(rl.retryAfterSec);
 
-  if (!topic || !text) {
+  const { topic: rawTopic, text: rawText } = await req.json();
+
+  if (!rawTopic || !rawText) {
     return new Response(JSON.stringify({ error: "주제와 글이 모두 필요합니다." }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  if (String(rawText).length > MAX_TEXT_LEN) {
+    return new Response(
+      JSON.stringify({ error: `글이 너무 길어요. (최대 ${MAX_TEXT_LEN.toLocaleString()}자)` }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const topic = String(rawTopic).trim().slice(0, MAX_TOPIC_LEN);
+  const text = String(rawText);
 
   const stream = new ReadableStream({
     async start(controller) {

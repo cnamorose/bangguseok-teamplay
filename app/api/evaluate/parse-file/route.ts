@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { extractText, deriveTopic, ParseDocError } from "@/lib/parse-doc";
 import { callLLMJson } from "@/lib/ai";
+import { rateLimit, tooManyResponse } from "@/lib/rateLimit";
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+
+// 파싱(CPU) + LLM 1회 → 유저당 10분에 20회
+const PARSE_LIMIT = 20;
+const PARSE_WINDOW_MS = 10 * 60 * 1000;
 
 // 파싱 + 주제 파악(LLM)까지 여유를 준다
 export const maxDuration = 60;
@@ -45,6 +50,9 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
     }
+
+    const rl = rateLimit(`parse-file:${user.id}`, PARSE_LIMIT, PARSE_WINDOW_MS);
+    if (!rl.allowed) return tooManyResponse(rl.retryAfterSec);
 
     const form = await req.formData();
     const file = form.get("file");

@@ -36,6 +36,7 @@ export default function Assemble() {
 
   // 주제 설정(구체화) 관련
   const [detail, setDetail] = useState(""); // 초점·관점·톤 등 세부 요청
+  const [targetLength, setTargetLength] = useState(""); // 목표 글자수(공백 포함, 선택)
   const [related, setRelated] = useState<string[]>([]); // 관련 주제
   const [recommended, setRecommended] = useState<string[]>([]); // 추천(구체화) 주제
   const [refining, setRefining] = useState(false);
@@ -135,6 +136,7 @@ export default function Assemble() {
         body: JSON.stringify({
           topic,
           detail,
+          targetLength: Number(targetLength) > 0 ? Number(targetLength) : undefined,
           teamName,
           searchPersona: selected.search,
           generatePersona: selected.generate,
@@ -300,6 +302,20 @@ export default function Assemble() {
             placeholder="원하는 초점·관점·톤을 적어주세요. (예: 실천 팁 위주로, 20대 독자에게, 담백한 문체로)"
             rows={3}
             style={{ width: "100%", boxSizing: "border-box", minHeight: 76 }}
+          />
+        </label>
+
+        <label className="tp-field">
+          <span className="tp-label">
+            목표 글자수 <span className="tp-optional">(선택 · 공백 포함 ±50자)</span>
+          </span>
+          <input
+            className="tp-input"
+            type="number"
+            min={0}
+            value={targetLength}
+            onChange={(e) => setTargetLength(e.target.value)}
+            placeholder="예: 1000 (비워두면 길이 제한 없음)"
           />
         </label>
 

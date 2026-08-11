@@ -2,8 +2,10 @@ import { callLLMJson, LLMUsage } from "@/lib/ai";
 import { runSearch } from "./search";
 import { runGenerate } from "./generate";
 import { runOrganize } from "./organize";
-import { runVisualize } from "./visualize";
+import { runVisualize, refitVisualize } from "./visualize";
 import { runCritic } from "./critic";
+import { fitToLength, countChars } from "./length";
+import { extractArticleText } from "@/lib/result-text";
 import {
   SearchOutput,
   GenerateOutput,
@@ -109,7 +111,13 @@ function mergeSearch(a: SearchOutput, b: SearchOutput): SearchOutput {
 export async function runDynamicGeneration(
   topic: string,
   assembly: Assembly,
-  opts: { maxRounds: number; organizeStyle?: string; maxResearch?: number; maxRewrite?: number },
+  opts: {
+    maxRounds: number;
+    organizeStyle?: string;
+    maxResearch?: number;
+    maxRewrite?: number;
+    targetLength?: number; // 목표 글자수(공백 포함). 있으면 ±50자로 맞춤.
+  },
   cb: OrchestratorCallbacks
 ): Promise<GenerationResult> {
   // 워커 실행 + 저장 헬퍼 (진행바 전진)
@@ -201,9 +209,32 @@ export async function runDynamicGeneration(
   );
 
   cb.progress("📊 결과물로 시각화하는 중...", "visualize");
-  const visualize = await step("visualize", assembly.visualizePersona, () =>
+  let visualize = await step("visualize", assembly.visualizePersona, () =>
     runVisualize(assembly.visualizePersona, organize)
   );
+
+  // 목표 글자수가 있으면 측정 → 교정 루프로 ±50자에 맞춘다.
+  // (최종 글은 visualize에서 확정되므로, 실제로 화면/다운로드에 쓰이는 텍스트 기준으로 잰다.)
+  const target = opts.targetLength;
+  if (target && target > 0) {
+    const measure = (v: typeof visualize) => countChars(extractArticleText({ visualize: v }));
+    const before = measure(visualize);
+    if (Math.abs(target - before) > 50) {
+      cb.progress(`📏 목표 분량(${target}자)에 맞추는 중... (현재 ${before}자)`, "visualize");
+      visualize = await fitToLength({
+        target,
+        tol: 50,
+        maxTries: 3,
+        initial: visualize,
+        measure,
+        revise: async (v, cur) => {
+          const { output, usage } = await refitVisualize(assembly.visualizePersona, v, target, cur, 50);
+          await cb.persist("visualize", assembly.visualizePersona, output, usage, false);
+          return { value: output, usage };
+        },
+      });
+    }
+  }
 
   return { search, generate: draft, organize, visualize };
 }

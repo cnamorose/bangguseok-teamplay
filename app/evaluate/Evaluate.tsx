@@ -253,6 +253,8 @@ export default function Evaluate() {
   const [wordsmithTurns, setWordsmithTurns] = useState(2);
   // 사용자가 수정본에 반영하고 싶은 의견 (선택)
   const [userOpinion, setUserOpinion] = useState("");
+  // 수정본 목표 글자수 (공백 포함, 선택)
+  const [revisionTargetLength, setRevisionTargetLength] = useState("");
   const [discussing, setDiscussing] = useState(false);
   const [discussStarted, setDiscussStarted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -378,6 +380,7 @@ export default function Evaluate() {
     setLibrarianTurns(2);
     setWordsmithTurns(2);
     setUserOpinion("");
+    setRevisionTargetLength("");
     setPage(0);
     setEvaluationId(null);
     setSaveState("idle");
@@ -519,7 +522,13 @@ export default function Evaluate() {
       const res = await fetch("/api/evaluate/discuss", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, librarianTurns, wordsmithTurns, userOpinion }),
+        body: JSON.stringify({
+          text,
+          librarianTurns,
+          wordsmithTurns,
+          userOpinion,
+          targetLength: Number(revisionTargetLength) > 0 ? Number(revisionTargetLength) : undefined,
+        }),
       });
 
       const reader = res.body!.getReader();
@@ -812,6 +821,20 @@ export default function Evaluate() {
                   placeholder="수정본에 꼭 반영했으면 하는 점을 적어주세요. 평가단 지적보다 우선 반영돼요. (예: 도입부는 그대로 두고, 결론만 더 강하게)"
                   rows={3}
                   style={{ width: "100%", boxSizing: "border-box", marginBottom: 16, minHeight: 84 }}
+                />
+
+                <p className="tp-col-title" style={{ margin: "0 0 8px" }}>
+                  📏 수정본 목표 글자수{" "}
+                  <span style={{ fontWeight: 400, opacity: 0.6 }}>(선택 · 공백 포함 ±50자)</span>
+                </p>
+                <input
+                  className="tp-input"
+                  type="number"
+                  min={0}
+                  value={revisionTargetLength}
+                  onChange={(e) => setRevisionTargetLength(e.target.value)}
+                  placeholder="예: 1000 (비워두면 길이 제한 없음)"
+                  style={{ width: "100%", boxSizing: "border-box", marginBottom: 16 }}
                 />
 
                 <button className="tp-btn" onClick={handleDiscuss} style={{ width: "100%" }}>
