@@ -94,12 +94,12 @@ export default function ResultView({ id }: { id: string }) {
                 "evaluate:prefill",
                 JSON.stringify({ topic: result.topic, text })
               );
-              router.push("/evaluate");
+              router.push("/study/evaluate");
             }}
           >
             🧑‍⚖️ 평가단에게 평가받기
           </button>
-          <button className="tp-btn-outline" onClick={() => router.push("/bookshelf")}>
+          <button className="tp-btn-outline" onClick={() => router.push("/study/bookshelf")}>
             📚 책장으로
           </button>
         </div>

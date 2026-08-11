@@ -75,7 +75,7 @@ export default function ClipboardView({ id }: { id: string }) {
             {new Date(clip.createdAt).toLocaleDateString("ko-KR")} · 평가단자료
           </p>
         </div>
-        <button className="tp-btn-outline" onClick={() => router.push("/bookshelf")}>
+        <button className="tp-btn-outline" onClick={() => router.push("/study/bookshelf")}>
           📚 책장으로
         </button>
       </div>

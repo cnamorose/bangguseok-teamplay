@@ -25,11 +25,11 @@ export const MODES: Record<ModeId, Mode> = {
     id: "study",
     label: "공부방",
     emoji: "📚",
-    home: "/bookshelf",
+    home: "/study/bookshelf",
     nav: [
-      { href: "/bookshelf", icon: "📚", label: "책장" },
-      { href: "/create", icon: "✍️", label: "새로 만들기" },
-      { href: "/evaluate", icon: "🧑‍⚖️", label: "평가단" },
+      { href: "/study/bookshelf", icon: "📚", label: "책장" },
+      { href: "/study/create", icon: "✍️", label: "새로 만들기" },
+      { href: "/study/evaluate", icon: "🧑‍⚖️", label: "평가단" },
     ],
   },
   career: {
@@ -56,7 +56,11 @@ export function toModeId(value: unknown): ModeId {
   return value === "career" || value === "study" ? value : DEFAULT_MODE;
 }
 
-/** 지금 URL이 어느 방인지. 취업방 화면만 /career 아래에 있다. */
+/**
+ * 지금 URL이 어느 방인지.
+ * /result, /clipboard처럼 두 방이 같이 쓰는 화면은 공부방으로 친다.
+ * (지금은 공부방 결과물에서만 열리므로. 취업방에서도 열게 되면 그때 판별 기준을 넓힌다)
+ */
 export function modeFromPath(pathname: string): ModeId {
   return pathname.startsWith("/career") ? "career" : "study";
 }

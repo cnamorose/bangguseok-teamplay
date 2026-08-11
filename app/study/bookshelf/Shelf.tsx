@@ -178,7 +178,7 @@ export default function Shelf() {
 
         <button
           className="tp-btn-sm"
-          onClick={() => router.push(view === "books" ? "/create" : "/evaluate")}
+          onClick={() => router.push(view === "books" ? "/study/create" : "/study/evaluate")}
           style={{ marginLeft: "auto" }}
         >
           {view === "books" ? "📖 새 책 만들기" : "🧑‍⚖️ 평가 받으러"}
