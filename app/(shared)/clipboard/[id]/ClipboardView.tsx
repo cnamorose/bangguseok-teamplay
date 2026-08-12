@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseSource } from "@/lib/parse-source";
-
-interface ScoreBreakdown {
-  label: string;
-  score: number;
-  maxScore: number;
-}
+import RubricBars, { ScoreBreakdown } from "@/app/components/RubricBars";
 
 interface EvalResult {
   evaluatorId: string;
@@ -91,25 +86,7 @@ export default function ClipboardView({ id }: { id: string }) {
                 {r.scoreLabel} {r.score}/{r.maxScore}
               </span>
             </div>
-            {r.breakdown && r.breakdown.length > 0 && (
-              <div className="tp-rubric">
-                {r.breakdown.map((b, i) => {
-                  const pct = b.maxScore > 0 ? Math.round((b.score / b.maxScore) * 100) : 0;
-                  return (
-                    <div key={i} className="tp-rubric-row">
-                      <span className="tp-rubric-label">{b.label}</span>
-                      <span className="tp-rubric-bar">
-                        <span className="tp-rubric-fill" style={{ width: `${pct}%` }} />
-                      </span>
-                      <span className="tp-rubric-score">
-                        {b.score}
-                        <span className="tp-rubric-max">/{b.maxScore}</span>
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {r.breakdown && <RubricBars breakdown={r.breakdown} />}
             <p className="tp-clipview-judge-comment">{r.comment}</p>
             {r.sources && r.sources.length > 0 && (
               <ul className="tp-clipview-src">

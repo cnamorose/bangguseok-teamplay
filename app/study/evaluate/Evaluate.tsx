@@ -4,12 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { diffWords } from "diff";
 import { parseSource } from "@/lib/parse-source";
 import { extractArticleText } from "@/lib/result-text";
-
-interface ScoreBreakdown {
-  label: string;
-  score: number;
-  maxScore: number;
-}
+import { readSse } from "@/lib/sse-client";
+import RubricBars, { ScoreBreakdown } from "@/app/components/RubricBars";
 
 interface EvalResult {
   evaluatorId: string;
@@ -20,29 +16,6 @@ interface EvalResult {
   comment: string;
   breakdown?: ScoreBreakdown[];
   sources?: string[];
-}
-
-// 세부 항목 점수를 막대로 보여준다 (평가 카드 / 클립보드 공용 느낌)
-function ScoreBreakdownList({ breakdown }: { breakdown: ScoreBreakdown[] }) {
-  return (
-    <div className="tp-rubric">
-      {breakdown.map((b, i) => {
-        const pct = b.maxScore > 0 ? Math.round((b.score / b.maxScore) * 100) : 0;
-        return (
-          <div key={i} className="tp-rubric-row">
-            <span className="tp-rubric-label">{b.label}</span>
-            <span className="tp-rubric-bar">
-              <span className="tp-rubric-fill" style={{ width: `${pct}%` }} />
-            </span>
-            <span className="tp-rubric-score">
-              {b.score}
-              <span className="tp-rubric-max">/{b.maxScore}</span>
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 interface ChatMessage {
@@ -473,35 +446,20 @@ export default function Evaluate() {
         return;
       }
 
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const event = JSON.parse(line.slice(6));
-
-          if (event.type === "progress") {
-            setProgress(event.message);
-          } else if (event.type === "evaluation") {
-            setResults((prev) => [...prev, event.result]);
-          } else if (event.type === "complete") {
-            setLoading(false);
-            // 평가 전체가 끝나면 자동 저장 (complete 이벤트에 전체 결과가 담겨 옴)
-            if (Array.isArray(event.evaluations)) autoSaveEvaluation(event.evaluations);
-          } else if (event.type === "error") {
-            setError(event.message);
-            setLoading(false);
-          }
+      await readSse(res, (event) => {
+        if (event.type === "progress") {
+          setProgress(event.message);
+        } else if (event.type === "evaluation") {
+          setResults((prev) => [...prev, event.result]);
+        } else if (event.type === "complete") {
+          setLoading(false);
+          // 평가 전체가 끝나면 자동 저장 (complete 이벤트에 전체 결과가 담겨 옴)
+          if (Array.isArray(event.evaluations)) autoSaveEvaluation(event.evaluations);
+        } else if (event.type === "error") {
+          setError(event.message);
+          setLoading(false);
         }
-      }
+      });
     } catch {
       setError("서버 오류가 발생했습니다.");
       setLoading(false);
@@ -531,39 +489,24 @@ export default function Evaluate() {
         }),
       });
 
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const event = JSON.parse(line.slice(6));
-
-          if (event.type === "progress") {
-            setDiscussProgress(event.message);
-          } else if (event.type === "message") {
-            setMessages((prev) => [...prev, event.message]);
-          } else if (event.type === "revision") {
-            revisedFromDiscuss = event.revised;
-            setRevisedText(event.revised);
-          } else if (event.type === "complete") {
-            setDiscussing(false);
-            setDiscussProgress("");
-            // 수정본이 나왔으면 저장된 평가 레코드에 덧붙인다
-            if (revisedFromDiscuss.trim()) saveRevision(revisedFromDiscuss, results);
-          } else if (event.type === "error") {
-            setDiscussProgress(event.message);
-            setDiscussing(false);
-          }
+      await readSse(res, (event) => {
+        if (event.type === "progress") {
+          setDiscussProgress(event.message);
+        } else if (event.type === "message") {
+          setMessages((prev) => [...prev, event.message]);
+        } else if (event.type === "revision") {
+          revisedFromDiscuss = event.revised;
+          setRevisedText(event.revised);
+        } else if (event.type === "complete") {
+          setDiscussing(false);
+          setDiscussProgress("");
+          // 수정본이 나왔으면 저장된 평가 레코드에 덧붙인다
+          if (revisedFromDiscuss.trim()) saveRevision(revisedFromDiscuss, results);
+        } else if (event.type === "error") {
+          setDiscussProgress(event.message);
+          setDiscussing(false);
         }
-      }
+      });
     } catch {
       setDiscussProgress("논의 진행에 실패했습니다.");
       setDiscussing(false);
@@ -755,9 +698,7 @@ export default function Evaluate() {
 
                   {r ? (
                     <>
-                      {r.breakdown && r.breakdown.length > 0 && (
-                        <ScoreBreakdownList breakdown={r.breakdown} />
-                      )}
+                      {r.breakdown && <RubricBars breakdown={r.breakdown} />}
                       <p className="tp-judge-body">{r.comment}</p>
                       {r.sources && r.sources.length > 0 && <SourceList sources={r.sources} />}
                     </>

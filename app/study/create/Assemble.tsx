@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PERSONA_CATALOG, STAGES, WRITING_STYLES } from "@/lib/persona-catalog";
+import { readSse } from "@/lib/sse-client";
 
 // 진행 단계 정의 (진행바 계산용)
 const PROGRESS_STAGES = ["search", "generate", "organize", "visualize", "file"];
@@ -155,38 +156,35 @@ export default function Assemble() {
         return;
       }
 
-      // SSE 스트림 읽기
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
+      // SSE 스트림 읽기.
+      // 완료·실패는 여기 담아두고 스트림이 닫힌 뒤에 처리한다
+      // (콜백 안에서 화면을 옮기면 아직 읽는 중인 스트림을 두고 떠나게 된다)
+      type Outcome = { resultId: string } | { error: string };
+      let result: Outcome | undefined;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        // "data: {...}\n\n" 단위로 파싱
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() || ""; // 마지막 미완성 조각은 남김
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const event = JSON.parse(line.slice(6));
-
-          if (event.type === "progress") {
-            setProgressMessage(event.message);
-          } else if (event.type === "done") {
-            setCompletedStages((prev) => prev + 1);
-          } else if (event.type === "complete") {
-            router.push(`/result/${event.resultId}`);
-            return;
-          } else if (event.type === "error") {
-            setError(event.message || "실행에 실패했습니다.");
-            setLoading(false);
-            return;
-          }
+      await readSse(res, (event) => {
+        if (event.type === "progress") {
+          setProgressMessage(event.message);
+        } else if (event.type === "done") {
+          setCompletedStages((prev) => prev + 1);
+        } else if (event.type === "complete") {
+          result = { resultId: event.resultId };
+        } else if (event.type === "error") {
+          result = { error: event.message || "실행에 실패했습니다." };
         }
+      });
+
+      // 콜백 안에서 대입한 값이라 타입 좁히기가 안 먹어서 한 번 되짚어준다
+      const outcome = result as Outcome | undefined;
+
+      if (outcome && "resultId" in outcome) {
+        router.push(`/result/${outcome.resultId}`);
+        return;
+      }
+      if (outcome && "error" in outcome) {
+        setError(outcome.error);
+        setLoading(false);
+        return;
       }
     } catch {
       setError("서버 오류가 발생했습니다.");
