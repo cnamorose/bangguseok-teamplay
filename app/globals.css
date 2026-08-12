@@ -215,6 +215,179 @@ body {
   box-shadow: var(--shadow-hard);
 }
 
+/* ══════════ 취업방: 기업 분석 ══════════ */
+
+.tp-career-col { display: flex; flex-direction: column; gap: 22px; max-width: 900px; }
+
+.tp-panel {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 22px 24px;
+  background: var(--paper);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+}
+
+/* 회사 카드 목록 */
+.tp-company-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.tp-company-card {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 18px 18px 16px;
+  text-align: left;
+  background: var(--paper);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+}
+.tp-company-card:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--ink); }
+.tp-company-name { margin: 0; font-size: 17px; font-weight: 800; color: var(--text); }
+.tp-company-date { margin: 0; font-size: 12px; color: var(--text-muted); }
+.tp-company-roles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.tp-role-chip {
+  font-size: 12px; font-weight: 700; padding: 3px 9px;
+  background: var(--cream); border: 2px solid var(--ink); border-radius: 999px;
+}
+
+/* 히어로 — 이 회사는 지금 ○○ 때문에 ○○을 강화하고 있다 */
+.tp-hero {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 26px 28px;
+  background: var(--cream);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+}
+.tp-hero-top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.tp-hero-name { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px; }
+.tp-hero-date { font-size: 12px; color: var(--text-muted); font-weight: 700; }
+.tp-hero-line { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.5; }
+.tp-hero-line strong {
+  font-weight: 900;
+  box-shadow: inset 0 -0.45em 0 var(--sage);
+  padding: 0 2px;
+}
+.tp-hero-keys { display: flex; flex-wrap: wrap; gap: 8px; }
+.tp-key-chip {
+  font-size: 13px; font-weight: 800; padding: 5px 12px;
+  background: var(--sage); color: #fff;
+  border: 2px solid var(--ink); border-radius: 999px;
+}
+.tp-hero-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+/* 블록 카드 */
+.tp-blk {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 20px 24px;
+  background: var(--paper);
+  border: var(--border-w) solid var(--ink);
+  border-left: 8px solid var(--sage);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+}
+.tp-blk.is-star { border-left-color: var(--book-4); }
+.tp-blk.is-note { border-left-color: var(--book-2); }
+.tp-blk-head {
+  margin: 0; font-size: 16px; font-weight: 800;
+  display: flex; align-items: center; gap: 8px;
+}
+.tp-blk-head span {
+  font-size: 13px; font-weight: 900; color: var(--sage-dark);
+}
+.tp-blk-body { margin: 0; font-size: 15px; line-height: 1.75; color: var(--text); }
+.tp-connect {
+  margin: 0; font-size: 14px; padding: 8px 12px;
+  background: var(--ivory); border-left: 3px solid var(--sage);
+}
+.tp-blk-ask {
+  margin: 0; font-size: 13px; color: var(--text-muted);
+  padding-top: 6px; border-top: 2px dotted var(--ink);
+}
+
+/* ② 흐름 전이도 */
+.tp-shift { display: flex; flex-direction: column; gap: 12px; }
+.tp-shift-grid { display: grid; gap: 8px; overflow-x: auto; }
+.tp-shift-head {
+  font-size: 12px; font-weight: 800; letter-spacing: .06em;
+  color: var(--text-muted); padding-bottom: 4px;
+  border-bottom: 2px solid var(--ink);
+}
+.tp-shift-head.is-plan { color: var(--sage-dark); border-bottom-style: dashed; }
+.tp-shift-cell { min-height: 34px; display: flex; align-items: center; }
+.tp-kw {
+  font-size: 13px; font-weight: 700; padding: 5px 10px;
+  border: 2px solid var(--ink); border-radius: var(--radius);
+  background: var(--cream);
+}
+.tp-kw.is-new { background: var(--sage); color: #fff; }
+.tp-kw.is-new b { font-weight: 900; }
+.tp-kw.is-gone { background: transparent; border-style: dotted; color: var(--text-muted); }
+.tp-kw.is-plan { background: transparent; border-style: dashed; border-color: var(--sage-dark); color: var(--text); }
+.tp-kw.is-plan em { font-style: normal; color: var(--text-muted); font-weight: 600; }
+.tp-shift-concl {
+  margin: 0; font-size: 17px; font-weight: 800;
+  padding-top: 10px; border-top: 2px solid var(--ink);
+}
+.tp-shift-only { margin: 0; font-size: 17px; font-weight: 800; }
+.tp-shift-legend { margin: 0; display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; }
+.tp-shift-legend .tp-kw { font-size: 11px; padding: 3px 8px; }
+
+.tp-issues { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
+.tp-issues li { font-size: 14px; }
+.tp-issue-date {
+  display: inline-block; min-width: 68px;
+  font-size: 12px; font-weight: 800; color: var(--text-muted);
+}
+
+/* ③ 경쟁 표 */
+.tp-vs { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tp-vs th, .tp-vs td { text-align: left; padding: 9px 12px; border-bottom: 2px dotted var(--ink); vertical-align: top; }
+.tp-vs th { width: 130px; font-weight: 800; white-space: nowrap; }
+.tp-vs tr:last-child th, .tp-vs tr:last-child td { border-bottom: none; }
+.tp-edge { margin: 0; font-size: 14px; font-weight: 700; padding: 8px 12px; background: var(--ivory); }
+
+/* ④ 언어 막대 */
+.tp-lang { display: flex; flex-direction: column; gap: 7px; }
+.tp-lang-row { display: grid; grid-template-columns: 120px 1fr auto auto; align-items: center; gap: 10px; }
+.tp-lang-word { font-size: 13px; font-weight: 800; }
+.tp-lang-bar { height: 10px; background: rgba(42, 31, 23, 0.1); border-radius: 999px; overflow: hidden; }
+.tp-lang-fill { display: block; height: 100%; background: var(--text-muted); border-radius: 999px; transition: width .35s ease; }
+.tp-lang-fill.is-official { background: var(--sage); }
+.tp-lang-dot { font-size: 13px; color: var(--sage-dark); }
+.tp-lang-from { font-size: 11px; color: var(--text-muted); min-width: 78px; }
+.tp-lang-note { margin: 8px 0 0; font-size: 12px; color: var(--text-muted); }
+.tp-lang-cliche {
+  margin: 0; font-size: 12px; color: var(--text-muted);
+  padding: 6px 10px; border: 2px dotted var(--ink);
+}
+
+/* ⑤ 직무 체크리스트 */
+.tp-check { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.tp-check li { font-size: 14px; }
+
+/* 출처 */
+.tp-sources { font-size: 13px; }
+.tp-sources summary { cursor: pointer; font-weight: 700; color: var(--text-muted); padding: 8px 0; }
+.tp-sources ul { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+
+.tp-company-view { display: flex; flex-direction: column; gap: 16px; max-width: 900px; }
+
+/* 진행바 — 걸리는 시간을 모를 때 쓰는 무한 애니메이션 */
+.tp-progress-indet { width: 40% !important; animation: tp-indet 1.4s ease-in-out infinite; }
+@keyframes tp-indet {
+  0% { margin-left: 0; }
+  50% { margin-left: 60%; }
+  100% { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-progress-indet { animation: none; width: 100% !important; opacity: .5; }
+}
+
 /* ── 방 이동 토글 (메뉴바 상단) ── */
 /* 책장 탭과 같은 컴포넌트를 쓰되, 좁은 메뉴바에 맞게 꽉 채우고 살짝 줄인다 */
 .tp-mode-toggle { width: 100%; }

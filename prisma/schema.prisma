@@ -26,6 +26,8 @@ model User {
   assemblies Assembly[]
   results    Result[]
   evaluations Evaluation[]
+  companies    Company[]
+  applications Application[]
 }
 
 model Assembly {
@@ -97,6 +99,56 @@ model ApiUsage {
   agentLog AgentLog @relation(fields: [agentLogId], references: [id], onDelete: Cascade)
 
   @@index([agentLogId])
+}
+
+// ── 취업방 ──
+//
+// 기업 분석은 두 단계로 나뉜다.
+//   1차(회사 레벨) → Company.analysis   : 정체·흐름·경쟁·언어. 직무를 바꿔도 그대로다.
+//   2차(직무 레벨) → Application.roleAnalysis : 직무·접점. 직무마다 다시 뽑아야 한다.
+// 이렇게 나눠야 한 회사를 여러 직무로 볼 때 회사 정보를 다시 긁지 않는다.
+
+model Company {
+  id           String    @id @default(uuid())
+  userId       String
+  name         String
+  analysis     Json?     // 회사 레벨 분석. 재분석하면 통째로 갈아끼운다
+  analyzedAt   DateTime?
+  lastResultId String?   // 이 분석을 만든 실행
+  notes        String?   // 내 메모 (설명회·현직자 얘기 등) — 재분석해도 보존한다
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@unique([userId, name])
+  @@index([userId, updatedAt(sort: Desc)])
+}
+
+// 회사 × 직무. 직무를 입력하는 순간 만들어지고, 나중에 자소서·면접이 여기 붙는다.
+// deadline·status·pinned는 지원 관리를 켤 때 쓰는 칸이라 지금은 비워둔다.
+model Application {
+  id           String    @id @default(uuid())
+  userId       String
+  companyId    String
+  role         String    // 직무
+  roleAnalysis Json?     // 직무 레벨 분석 (직무·접점)
+  analyzedAt   DateTime?
+  lastResultId String?
+  deadline     DateTime?
+  status       String    @default("preparing") // preparing | submitted | doc_pass | interview | closed
+  pinned       Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, role])
+  @@index([userId, pinned(sort: Desc), deadline]) // 책상 기본 정렬
+  @@index([userId, status])
+  @@index([companyId])
 }
 
 model Evaluation {

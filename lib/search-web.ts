@@ -32,6 +32,7 @@ export interface WebSearchResult {
   url: string;
   content: string; // Tavily가 추출한 페이지 내용 요약
   score: number;   // 관련도 점수 (0~1)
+  date: string;    // 발행일(YYYY-MM-DD). 확인 안 되면 빈 문자열
 }
 
 export interface SearchOptions {
@@ -41,6 +42,23 @@ export interface SearchOptions {
   includeDomains?: string[];
   /** 관련도 점수가 이 값 미만인 결과는 버린다 (0~1). */
   minScore?: number;
+  /**
+   * "news"로 두면 뉴스 색인에서 찾고 발행일이 함께 온다.
+   * 시효가 중요한 것(최근 이슈·실적)은 이걸 써야 날짜를 믿을 수 있다.
+   */
+  topic?: "general" | "news";
+  /** topic이 "news"일 때, 최근 며칠 안의 것만 볼지 */
+  days?: number;
+}
+
+/**
+ * Tavily의 발행일은 "Tue, 24 Feb 2026 08:42:40 GMT" 형식으로 온다.
+ * 화면·프롬프트에서 쓰기 좋게 YYYY-MM-DD로 바꾸고, 못 읽으면 빈 문자열.
+ */
+function toISODate(raw: string | undefined): string {
+  if (!raw) return "";
+  const t = Date.parse(raw);
+  return Number.isNaN(t) ? "" : new Date(t).toISOString().slice(0, 10);
 }
 
 /**
@@ -57,6 +75,8 @@ export async function searchWeb(
     excludeDomains: opts.excludeDomains ?? LOW_TRUST_DOMAINS,
     // includeDomains를 넘기면 해당 도메인들만 검색된다.
     ...(opts.includeDomains ? { includeDomains: opts.includeDomains } : {}),
+    ...(opts.topic ? { topic: opts.topic } : {}),
+    ...(opts.days ? { days: opts.days } : {}),
   });
 
   let results = response.results;
@@ -64,10 +84,22 @@ export async function searchWeb(
     results = results.filter((r) => r.score >= opts.minScore!);
   }
 
-  return results.map((r) => ({
+  let mapped: WebSearchResult[] = results.map((r) => ({
     title: r.title,
     url: r.url,
     content: r.content,
     score: r.score,
+    // 뉴스 색인에서만 안정적으로 온다. 없으면 빈 문자열로 두고,
+    // 날짜가 필요한 자리(이슈·연도별 키워드)에는 쓰지 않는다.
+    date: toISODate(r.publishedDate),
   }));
+
+  // days를 줘도 그보다 오래된 게 섞여 오는 경우가 있어 한 번 더 거른다.
+  // (날짜를 모르는 결과는 남긴다 — 내용은 여전히 쓸모가 있다)
+  if (opts.days) {
+    const cutoff = Date.now() - opts.days * 24 * 60 * 60 * 1000;
+    mapped = mapped.filter((r) => !r.date || Date.parse(r.date) >= cutoff);
+  }
+
+  return mapped;
 }
