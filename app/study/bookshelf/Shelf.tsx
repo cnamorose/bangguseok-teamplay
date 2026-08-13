@@ -8,7 +8,8 @@ interface ResultItem {
   id: string;
   topic: string;
   createdAt: string;
-  assembly: { name: string };
+  // 팀을 조립하지 않은 실행은 assembly가 없다
+  assembly: { name: string } | null;
 }
 
 interface ClipItem {
@@ -104,7 +105,7 @@ export default function Shelf() {
     ? results.filter(
         (item) =>
           item.topic.toLowerCase().includes(q) ||
-          item.assembly.name.toLowerCase().includes(q)
+          (item.assembly?.name ?? "").toLowerCase().includes(q)
       )
     : results;
   const filteredClips = q
@@ -197,8 +198,8 @@ export default function Shelf() {
         <>
           {results.length === 0 ? (
             <div className="tp-shelf-empty">
-              아직 책장에 꽂힌 팀플이 없어요.
-              <br />첫 팀플을 만들어 책장을 채워보세요!
+              아직 책장에 꽂힌 책이 없어요.
+              <br />첫 책을 만들어 책장을 채워보세요!
             </div>
           ) : filteredBooks.length === 0 ? (
             <div className="tp-shelf-empty">
@@ -221,7 +222,7 @@ export default function Shelf() {
                           <h3 className="tp-book-title">{item.topic}</h3>
                         </div>
                         <p className="tp-book-meta">
-                          {item.assembly.name}
+                          {item.assembly?.name}
                           <br />
                           {new Date(item.createdAt).toLocaleDateString("ko-KR")}
                         </p>

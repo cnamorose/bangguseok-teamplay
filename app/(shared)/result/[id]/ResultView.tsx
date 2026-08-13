@@ -70,7 +70,7 @@ export default function ResultView({ id }: { id: string }) {
       {/* 왼쪽 면: 속표지 */}
       <div className="tp-page tp-page-left">
         <h1 className="tp-page-title">{result.topic}</h1>
-        <p className="tp-page-sub">{result.assembly.name}</p>
+        <p className="tp-page-sub">{result.assembly?.name}</p>
         {result.createdAt && (
           <p className="tp-page-date">
             {new Date(result.createdAt).toLocaleDateString("ko-KR")}

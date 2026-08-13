@@ -9,7 +9,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
     }
 
-    const where = { userId: user.id };
+    // 공부방 책장이므로 이 방에서 만든 것만.
+    // (취업방 실행 기록도 같은 Result 표에 쌓이는데, 그쪽은 팀 조립이 없어 assembly가 없다)
+    const where = { userId: user.id, mode: "study" };
     const orderBy = { createdAt: "desc" as const };
     // 목록에 필요한 것만 select (무거운 resultData 등은 제외 — 결과물이 많아져도 가볍게)
     const select = {

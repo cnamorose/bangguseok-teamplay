@@ -11,7 +11,8 @@ export async function GET() {
     }
 
     const evaluations = await prisma.evaluation.findMany({
-      where: { userId: user.id },
+      // 공부방 클립보드 — 취업방에서 받은 평가(자소서 컨설팅 등)는 여기 섞이지 않게
+      where: { userId: user.id, mode: "study" },
       orderBy: { createdAt: "desc" },
       // 목록엔 무거운 text/revised는 빼고, 점수 요약용 results만
       select: { id: true, topic: true, createdAt: true, results: true },
