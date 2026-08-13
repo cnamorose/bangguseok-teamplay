@@ -103,7 +103,7 @@ export default function RoomShell({
       {/* 좌측 메뉴바 */}
       <aside className="tp-sidebar">
         <Link href={MODES[mode].home} className="tp-logo">
-          🏠 <span>방구석 팀플</span>
+          🏠 <span>방구석 스터디</span>
         </Link>
 
         <SegmentedToggle

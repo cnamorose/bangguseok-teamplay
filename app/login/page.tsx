@@ -48,8 +48,8 @@ export default function LoginPage() {
       {/* 로그인 카드 */}
       <div className="tp-card">
         <div className="tp-card-header">
-          <h1>🏠 방구석 팀플</h1>
-          <p>내 방 책장에서 시작하는 팀 프로젝트</p>
+          <h1>🏠 방구석 스터디</h1>
+          <p>내 방 책장에서 시작하는 공부와 취업 준비</p>
         </div>
 
         <form onSubmit={handleSubmit} className="tp-card-body">

@@ -12,8 +12,8 @@ const notoSansKr = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: "방구석 팀플",
-  description: "내 방 책장에서 시작하는 팀 프로젝트",
+  title: "방구석 스터디",
+  description: "내 방 책장에서 시작하는 공부와 취업 준비",
 };
 
 export default function RootLayout({
