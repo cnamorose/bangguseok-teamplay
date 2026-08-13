@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { diffWords } from "diff";
+import DiffView from "@/app/components/DiffView";
 import { parseSource } from "@/lib/parse-source";
 import { extractArticleText } from "@/lib/result-text";
 import { readSse } from "@/lib/sse-client";
@@ -167,7 +167,7 @@ function BookshelfPicker({
                   <span className="tp-picker-row-main">
                     <span className="tp-picker-row-title">{item.topic}</span>
                     <span className="tp-picker-row-meta">
-                      {item.assembly.name} · {new Date(item.createdAt).toLocaleDateString("ko-KR")}
+                      {item.assembly?.name} · {new Date(item.createdAt).toLocaleDateString("ko-KR")}
                     </span>
                   </span>
                   <span className="tp-picker-row-arrow">
@@ -543,11 +543,6 @@ export default function Evaluate() {
     diff: "🔍 바뀐 곳 (내 글 → 수정본)",
   };
 
-  // 깃허브 커밋 디프처럼: 삭제는 빨강, 추가는 초록
-  const diffParts = useMemo(
-    () => (revisedText && originalForDiff ? diffWords(originalForDiff, revisedText) : []),
-    [originalForDiff, revisedText]
-  );
   const enabledIdx = pages.map((_, i) => i).filter((i) => pageEnabled(pages[i].key));
   const prevIdx = [...enabledIdx].reverse().find((i) => i < cur);
   const nextIdx = enabledIdx.find((i) => i > cur);
@@ -865,37 +860,7 @@ export default function Evaluate() {
             ))}
           {/* 바뀐 곳: 내 글 | 수정본 (1:1) */}
           {curKey === "diff" && revisedText && (
-            <div className="tp-diff">
-              <div className="tp-diff-pane">
-                <div className="tp-diff-head tp-diff-head-del">📝 내 글 <span>지워진 부분</span></div>
-                <div className="tp-diff-body">
-                  {diffParts
-                    .filter((p) => !p.added)
-                    .map((p, i) =>
-                      p.removed ? (
-                        <del key={i} className="tp-diff-del">{p.value}</del>
-                      ) : (
-                        <span key={i}>{p.value}</span>
-                      )
-                    )}
-                </div>
-              </div>
-
-              <div className="tp-diff-pane">
-                <div className="tp-diff-head tp-diff-head-add">✨ 수정본 <span>더해진 부분</span></div>
-                <div className="tp-diff-body">
-                  {diffParts
-                    .filter((p) => !p.removed)
-                    .map((p, i) =>
-                      p.added ? (
-                        <ins key={i} className="tp-diff-add">{p.value}</ins>
-                      ) : (
-                        <span key={i}>{p.value}</span>
-                      )
-                    )}
-                </div>
-              </div>
-            </div>
+            <DiffView original={originalForDiff} revised={revisedText} />
           )}
         </div>
 

@@ -1,58 +1,11 @@
 import { callLLMJson, LLMUsage } from "@/lib/ai";
-import {
-  CHIEF_EVALUATOR,
-  SEARCH_EVALUATOR,
-  ORGANIZE_EVALUATOR,
-  RubricItem,
-} from "@/lib/evaluators";
-import { EvaluationResult, ScoreBreakdown } from "@/lib/pipeline-types";
+import { CHIEF_EVALUATOR, SEARCH_EVALUATOR, ORGANIZE_EVALUATOR } from "@/lib/evaluators";
+import { EvaluationResult } from "@/lib/pipeline-types";
 import { searchWeb } from "@/lib/search-web";
+import { scoreByRubric } from "@/lib/agents/rubric";
 
-// rubric 기반 채점: 항목별로 점수를 받아 합산 → 총점 + 세부 breakdown
-// taskPrompt = "평가할 글/자료 제시 + 무엇을 평가하라"까지만. 채점 규칙/JSON은 여기서 붙인다.
-async function scoreByRubric(opts: {
-  systemPrompt: string;
-  taskPrompt: string;
-  rubric: RubricItem[];
-}): Promise<{ total: number; breakdown: ScoreBreakdown[]; comment: string; usage: LLMUsage }> {
-  const { systemPrompt, taskPrompt, rubric } = opts;
-
-  const itemsText = rubric
-    .map((i) => `- ${i.key} (${i.label}, ${i.max}점 만점): ${i.guide}`)
-    .join("\n");
-  const scoreKeys = rubric.map((i) => `"${i.key}": 0~${i.max} 사이 정수`).join(", ");
-
-  const userPrompt = `
-${taskPrompt}
-
-[채점 항목] 각 항목을 만점 기준으로 냉정하게 채점해. 후하게 주지 말고, 결점이 있으면 과감히 낮게 줘.
-${itemsText}
-
-[점수 감각] 각 항목에서 만점의 85% 이상 = 뛰어남, 60~85% = 준수, 40~60% = 보통, 40% 미만 = 미흡.
-근거가 약하거나 확인되지 않으면 낮은 구간을 줘. 좋은 점만 보지 말고 약점을 반드시 반영해.
-
-아래 JSON 형식으로만 응답해. 다른 설명 붙이지 마.
-{
-  "scores": { ${scoreKeys} },
-  "comment": "총평 — 강점과 약점을 균형있게 (2~3문장)"
-}
-`.trim();
-
-  const { data, usage } = await callLLMJson<{ scores: Record<string, number>; comment: string }>({
-    systemPrompt,
-    userPrompt,
-  });
-
-  // 항목별 점수 정리 (범위 밖·누락 방어)
-  const breakdown: ScoreBreakdown[] = rubric.map((i) => {
-    const raw = Number(data.scores?.[i.key]);
-    const score = Math.max(0, Math.min(i.max, Number.isFinite(raw) ? Math.round(raw) : 0));
-    return { label: i.label, score, maxScore: i.max };
-  });
-  const total = breakdown.reduce((sum, b) => sum + b.score, 0);
-
-  return { total, breakdown, comment: data.comment ?? "", usage };
-}
+// 공부방 평가단. 채점 절차 자체는 lib/agents/rubric.ts에 있고
+// 여기서는 '무엇을 평가할지'만 정한다. (취업방 첨삭단도 같은 함수를 쓴다)
 
 // 평가원: 전반적 종합 평가
 export async function evaluateChief(

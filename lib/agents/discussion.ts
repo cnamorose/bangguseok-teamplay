@@ -1,7 +1,6 @@
-import { callLLMJson, callLLM, LLMUsage } from "@/lib/ai";
+import { callLLMJson, LLMUsage } from "@/lib/ai";
 import { CHIEF_EVALUATOR, SEARCH_EVALUATOR, ORGANIZE_EVALUATOR } from "@/lib/evaluators";
-import { EvaluationResult } from "@/lib/pipeline-types";
-import { fitToLength, countChars, lengthInstruction, trimToSentenceEnd } from "./length";
+import { reviseText } from "./revise";
 
 // 대화 한 발언
 export interface DiscussionMessage {
@@ -251,83 +250,14 @@ export async function generateRevision(
   userOpinion?: string,
   targetLength?: number
 ): Promise<{ revised: string; usage: LLMUsage }> {
-  // 사용자가 직접 남긴 의견이 있으면 '최우선 요구사항'으로 못박는다.
-  const opinionBlock = userOpinion?.trim()
-    ? `
-[글쓴이(사용자)의 요구사항 - 최우선 반영]
-${userOpinion.trim()}
-`
-    : "";
-
-  const userPrompt = `
-아래는 원본 글과, 평가단이 이 글을 두고 나눈 회의 내용이야.
-회의에서 나온 지적들을 최대한 반영해서, 원본 글을 개선한 '수정본'을 작성해줘.
-
-[원본 글]
-${originalText}
-
-[평가단 회의 내용]
-${formatHistory(history)}
-${opinionBlock}
-규칙:
-- 회의에서 지적된 문제(사실성, 문장, 구성 등)를 실제로 반영해서 고쳐.${
-    opinionBlock
-      ? "\n- 위 [글쓴이의 요구사항]은 평가단 지적보다 우선해서 반드시 반영해. 회의 내용과 충돌하면 글쓴이의 요구를 따라."
-      : ""
-  }
-- 원본의 핵심 주제와 논지는 유지해.
-- 완성된 하나의 글로 작성해. (지적 목록이 아니라 실제 개선된 글)
-
-아래 JSON 형식으로만 응답해.
-{
-  "revised": "개선된 글 전문"
-}
-`.trim();
-
-  const { data, usage } = await callLLMJson<{ revised: string }>({
+  const { revised, usages } = await reviseText({
+    original: originalText,
+    points: formatHistory(history),
+    pointsLabel: "평가단 회의 내용",
+    userOpinion,
+    targetLength,
     systemPrompt: CHIEF_EVALUATOR.systemPrompt,
-    userPrompt,
   });
 
-  let revised = data.revised ?? "";
-  let totalUsage = usage;
-
-  // 목표 글자수가 있으면 측정 → 교정 루프로 ±50자에 맞춘다.
-  if (targetLength && targetLength > 0 && revised.trim()) {
-    revised = await fitToLength({
-      target: targetLength,
-      tol: 50,
-      maxTries: 3,
-      initial: revised,
-      measure: (s) => countChars(s),
-      revise: async (s, cur) => {
-        const p = `
-아래 글을 '길이만' 목표에 맞게 다시 써줘. 주제·논지·핵심 내용은 유지.
-
-[글]
-${s}
-
-${lengthInstruction(cur, targetLength, 50)}
-
-아래 JSON 형식으로만 응답해.
-{ "revised": "길이를 맞춘 글 전문" }
-`.trim();
-        const r = await callLLMJson<{ revised: string }>({
-          systemPrompt: CHIEF_EVALUATOR.systemPrompt,
-          userPrompt: p,
-        });
-        return { value: r.data.revised || s, usage: r.usage };
-      },
-      onUsage: (u) => {
-        totalUsage = addUsage(totalUsage, u);
-      },
-    });
-
-    // 그래도 목표를 넘치면 문장 끝에서 잘라 상한 보장
-    if (countChars(revised) > targetLength + 50) {
-      revised = trimToSentenceEnd(revised, targetLength);
-    }
-  }
-
-  return { revised, usage: totalUsage };
+  return { revised, usage: usages.reduce(addUsage, ZERO_USAGE) };
 }
