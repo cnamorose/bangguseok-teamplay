@@ -39,9 +39,10 @@ export const MODES: Record<ModeId, Mode> = {
     home: "/career/desk",
     nav: [
       { href: "/career/desk", icon: "🗂️", label: "책상" },
+      { href: "/career/experience", icon: "🧰", label: "내 경험" },
       { href: "/career/companies", icon: "🏢", label: "기업 분석" },
       { href: "/career/resume", icon: "📝", label: "자소서 작성" },
-      { href: "/career/consult", icon: "🔍", label: "자소서 컨설팅" },
+      { href: "/career/consult", icon: "🔍", label: "자소서 첨삭" },
       { href: "/career/interview", icon: "🎤", label: "면접 준비" },
     ],
   },

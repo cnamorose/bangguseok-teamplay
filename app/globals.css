@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────
-   방구석 팀플 · 디자인 토큰 + 공용 컴포넌트
+   방구석 스터디 · 디자인 토큰 + 공용 컴포넌트
    기존 globals.css가 있다면 아래 :root 블록과
    .tp-* 클래스만 복사해서 합쳐 주세요.
    (@tailwind, 기존 reset 등은 그대로 두면 됩니다.)
@@ -376,6 +376,224 @@ body {
 .tp-sources ul { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 
 .tp-company-view { display: flex; flex-direction: column; gap: 16px; max-width: 900px; }
+
+/* ── 내 경험 ── */
+.tp-exp-msg {
+  margin: 0; font-size: 13px; font-style: italic; color: var(--text);
+  padding: 6px 10px; background: var(--ivory); border-left: 3px solid var(--sage);
+}
+.tp-exp-meter { display: flex; align-items: center; gap: 3px; margin-top: 2px; }
+.tp-exp-meter span {
+  width: 12px; height: 6px; border-radius: 2px;
+  background: rgba(42, 31, 23, 0.15);
+}
+.tp-exp-meter span.is-on { background: var(--sage); }
+.tp-exp-meter em {
+  font-style: normal; font-size: 11px; font-weight: 800;
+  color: var(--text-muted); margin-left: 4px;
+}
+.tp-exp-warn { margin: 0; font-size: 12px; font-weight: 700; color: var(--book-6); }
+
+.tp-star {
+  background: none; border: none; cursor: pointer;
+  font-size: 20px; line-height: 1; color: rgba(42, 31, 23, 0.22); padding: 0 4px;
+}
+.tp-star.is-on { color: var(--book-2); }
+
+.tp-edit-head { display: flex; align-items: center; gap: 8px; }
+.tp-edit-head .tp-input { flex: 1; font-weight: 800; }
+
+/* 부족한 점 — 답할 수 있는 질문 형태로 */
+.tp-gaps {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px 16px; background: var(--cream);
+  border: 2px dashed var(--ink); border-radius: var(--radius);
+}
+.tp-gap { padding-left: 10px; border-left: 3px solid var(--book-6); }
+.tp-gap.is-misplaced { border-left-color: var(--book-4); }
+.tp-gap.is-vague { border-left-color: var(--book-2); }
+.tp-gap.is-subject { border-left-color: var(--book-1); }
+.tp-gap-q { margin: 0; font-size: 14px; font-weight: 800; }
+.tp-gap-why { margin: 2px 0 0; font-size: 12px; color: var(--text-muted); }
+/* 색만으로 종류를 구분하지 않도록 라벨을 함께 붙인다 */
+.tp-gap-tag {
+  display: inline-block; margin-right: 8px;
+  font-size: 11px; font-weight: 800; padding: 1px 8px;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 999px;
+}
+
+/* 표 보기 — 경험끼리 나란히 비교하는 게 이 화면의 본체다 */
+.tp-exp-table-wrap {
+  overflow-x: auto;
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: var(--shadow-hard);
+}
+.tp-exp-table { width: 100%; min-width: 860px; border-collapse: collapse; font-size: 13px; }
+.tp-exp-table th, .tp-exp-table td {
+  text-align: left; padding: 10px 12px; vertical-align: top;
+  border-bottom: 2px dotted var(--ink);
+}
+.tp-exp-table th {
+  font-size: 11px; letter-spacing: .06em; font-weight: 800;
+  color: var(--text-muted); background: var(--cream); white-space: nowrap;
+}
+.tp-exp-table tbody tr { cursor: pointer; }
+.tp-exp-table tbody tr:hover { background: var(--ivory); }
+.tp-exp-table tbody tr:last-child td { border-bottom: none; }
+.tp-exp-table td.is-empty { color: var(--book-6); font-weight: 700; }
+.tp-exp-num { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tp-exp-sub { font-size: 11px; color: var(--text-muted); }
+
+/* ── 책상 (지원 건) ── */
+.tp-desk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.tp-desk-card {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 18px; text-align: left;
+  background: var(--paper);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+}
+.tp-desk-card:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--ink); }
+.tp-desk-card.is-urgent { border-color: var(--book-6); box-shadow: 0 4px 0 var(--book-6); }
+
+.tp-desk-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.tp-desk-name { margin: 0; font-size: 16px; font-weight: 800; }
+.tp-desk-name span { font-weight: 600; color: var(--text-muted); }
+.tp-pin { font-size: 15px; opacity: .25; cursor: pointer; line-height: 1; }
+.tp-pin.is-on { opacity: 1; }
+
+.tp-desk-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tp-dday {
+  font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums;
+  padding: 2px 10px; background: var(--cream);
+  border: 2px solid var(--ink); border-radius: 999px;
+}
+.tp-dday.is-urgent { background: var(--book-6); color: #fff; }
+.tp-status {
+  font-size: 12px; font-weight: 700; padding: 3px 10px;
+  border: 2px solid var(--ink); border-radius: 999px; background: var(--ivory);
+}
+.tp-status.is-doc_pass, .tp-status.is-interview { background: var(--sage); color: #fff; }
+.tp-status.is-closed { opacity: .5; }
+
+.tp-desk-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.tp-desk-steps li { font-size: 12.5px; color: var(--text-muted); }
+.tp-desk-steps li.is-done { color: var(--text); font-weight: 700; }
+
+.tp-desk-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.tp-inline-field { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+.tp-inline-field .tp-input { width: auto; padding: 6px 10px; }
+
+.tp-essay-item { border-bottom: 2px dotted var(--ink); }
+.tp-essay-item:last-of-type { border-bottom: none; }
+.tp-essay-body {
+  padding: 12px 14px; margin-bottom: 10px;
+  background: var(--ivory); font-size: 14px; line-height: 1.85;
+  white-space: pre-wrap; border-left: 3px solid var(--sage);
+}
+.tp-over { color: var(--book-6); font-weight: 800; }
+
+/* ── 자소서 작성 ── */
+.tp-exp-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.tp-pick {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 10px 12px; text-align: left;
+  background: var(--cream); border: 2px solid var(--ink);
+  border-radius: var(--radius); cursor: pointer;
+  transition: background .12s;
+}
+.tp-pick strong { font-size: 13px; font-weight: 800; }
+.tp-pick em { font-style: normal; font-size: 12px; color: var(--text-muted); }
+.tp-pick span { font-size: 11px; color: var(--text-muted); }
+.tp-pick[aria-pressed="true"] { background: var(--sage); color: #fff; box-shadow: var(--shadow-hard); }
+.tp-pick[aria-pressed="true"] em,
+.tp-pick[aria-pressed="true"] span { color: rgba(255, 255, 255, 0.85); }
+
+.tp-chars { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ── 면접 ── */
+.tp-iv-top {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 18px;
+  background: var(--cream);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+}
+.tp-iv-count { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tp-iv-timer {
+  margin-left: auto;
+  font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums;
+  padding: 2px 12px; background: var(--paper);
+  border: 2px solid var(--ink); border-radius: 999px;
+}
+.tp-iv-timer.is-over { background: var(--book-6); color: #fff; }
+/* 답변으로 볼 수 없는 입력 — 자국을 남겨 둔다 */
+.tp-chat-bubble.is-invalid {
+  opacity: .55;
+  border-style: dashed;
+  text-decoration: line-through;
+}
+.tp-iv-foot { display: flex; align-items: center; gap: 12px; }
+.tp-iv-foot .tp-btn { margin-left: auto; }
+.tp-sub-desc.is-over { color: var(--book-6); font-weight: 800; }
+
+/* 첨삭 — 고칠 곳의 해결책 줄 */
+.tp-point-fix {
+  margin: 4px 0 0; font-size: 13px; font-weight: 700;
+  padding: 5px 10px; background: var(--ivory); border-left: 3px solid var(--sage);
+}
+.tp-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .tp-two { grid-template-columns: 1fr; } }
+
+/* 문항 머리 — 번호 · 문항 · 삭제 */
+.tp-q-head { display: flex; align-items: flex-start; gap: 12px; }
+.tp-q-num {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900;
+  background: var(--sage); color: #fff;
+  border: 2px solid var(--ink); border-radius: 999px;
+}
+.tp-q-title { flex: 1; min-width: 0; }
+.tp-q-title strong { font-size: 15px; line-height: 1.5; }
+.tp-q-title p { margin: 3px 0 0; }
+
+/* AI 티 검증 결과 */
+.tp-tells {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 14px 16px; background: var(--cream);
+  border: 2px dashed var(--ink); border-radius: var(--radius);
+}
+.tp-tell { padding-left: 10px; border-left: 3px solid var(--text-muted); }
+.tp-tell.is-high { border-left-color: var(--book-6); }
+.tp-tell-head { margin: 0; font-size: 14px; font-weight: 800; }
+/* 심각도를 색으로만 알리지 않도록 라벨을 붙인다 */
+.tp-tell-tag {
+  display: inline-block; margin-right: 8px;
+  font-size: 11px; font-weight: 800; padding: 1px 8px;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 999px;
+}
+.tp-tell-detail { margin: 3px 0 0; font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+.tp-tell-sample {
+  margin: 6px 0 0; padding: 6px 10px;
+  font-size: 12.5px; background: var(--ivory);
+  border-left: 2px solid var(--ink);
+}
+
+.tp-essay-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 0; border-bottom: 2px dotted var(--ink);
+}
+.tp-essay-row:last-child { border-bottom: none; }
+.tp-essay-row strong { font-size: 14px; }
+.tp-essay-row p { margin: 2px 0 0; }
 
 /* 진행바 — 걸리는 시간을 모를 때 쓰는 무한 애니메이션 */
 .tp-progress-indet { width: 40% !important; animation: tp-indet 1.4s ease-in-out infinite; }

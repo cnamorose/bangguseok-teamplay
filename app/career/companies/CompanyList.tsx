@@ -25,7 +25,6 @@ export default function CompanyList() {
   const [error, setError] = useState("");
 
   const [name, setName] = useState("");
-  const [role, setRole] = useState("");
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState("");
 
@@ -44,12 +43,12 @@ export default function CompanyList() {
     return () => controller.abort();
   }, []);
 
-  // 이미 분석해 둔 회사인지 (같은 이름이면 회사 분석을 재사용할지 물어본다)
+  // 이미 분석해 둔 회사인지 (다시 돌리면 덮어쓰므로 미리 알려준다)
   const existing = companies.find(
     (c) => c.name.trim().toLowerCase() === name.trim().toLowerCase() && c.analyzedAt
   );
 
-  const analyze = async (reuse: boolean) => {
+  const analyze = async () => {
     if (!name.trim()) {
       setError("회사명을 입력해주세요.");
       return;
@@ -62,7 +61,7 @@ export default function CompanyList() {
       const res = await fetch("/api/career/company/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), role: role.trim(), reuse }),
+        body: JSON.stringify({ name: name.trim() }),
       });
 
       if (!res.ok && res.headers.get("Content-Type")?.includes("application/json")) {
@@ -127,44 +126,23 @@ export default function CompanyList() {
           />
         </label>
 
-        <label className="tp-field">
-          <span className="tp-label">
-            지원 직무 <span className="tp-optional">(선택 · 넣으면 직무 분석까지)</span>
-          </span>
-          <input
-            className="tp-input"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            placeholder="예: 백엔드 개발"
-          />
-          <span className="tp-sub-desc" style={{ margin: 0 }}>
-            회사 분석은 직무와 상관없이 한 번만 하면 돼요. 직무를 바꿔 가며 여러 번 볼 수 있어요.
-          </span>
-        </label>
+        <p className="tp-sub-desc" style={{ margin: 0 }}>
+          회사가 어디로 가는지만 봅니다. <strong>직무와 채용공고는 책상에서 지원 건을 만들 때</strong> 다뤄요 —
+          한 회사에 여러 공고로 지원할 수 있으니까요.
+        </p>
 
         {error && <p className="tp-error">{error}</p>}
 
-        {existing ? (
-          <div className="tp-sub">
-            <p className="tp-sub-title">📁 이미 분석해 둔 회사예요</p>
-            <p className="tp-sub-desc">
-              {new Date(existing.analyzedAt!).toLocaleDateString("ko-KR")} 기준 분석이 있어요.
-              그대로 쓰면 직무 분석만 새로 하니 훨씬 빨라요.
-            </p>
-            <div className="tp-choices">
-              <button type="button" className="tp-btn" onClick={() => analyze(true)}>
-                📁 기존 분석 쓰기
-              </button>
-              <button type="button" className="tp-btn-outline" onClick={() => analyze(false)}>
-                🔄 새로 분석하기
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button type="button" className="tp-btn" onClick={() => analyze(false)}>
-            🔎 분석 시작
-          </button>
+        {existing && (
+          <p className="tp-sub-desc" style={{ margin: 0 }}>
+            📁 {new Date(existing.analyzedAt!).toLocaleDateString("ko-KR")} 기준 분석이 이미 있어요.
+            다시 돌리면 덮어씁니다. (내 메모는 그대로 남아요)
+          </p>
         )}
+
+        <button type="button" className="tp-btn" onClick={analyze}>
+          {existing ? "🔄 다시 분석하기" : "🔎 분석 시작"}
+        </button>
       </div>
 
       {/* 목록 */}
