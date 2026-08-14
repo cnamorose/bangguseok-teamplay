@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import RoomShell from "@/app/components/RoomShell";
+import Shell from "@/app/components/Shell";
 import Evaluate from "./Evaluate";
 
 export default async function EvaluatePage() {
@@ -10,8 +10,8 @@ export default async function EvaluatePage() {
   if (!user) redirect("/login");
 
   return (
-    <RoomShell user={user} title="🧑‍⚖️ 평가단" flush>
+    <Shell user={user}>
       <Evaluate />
-    </RoomShell>
+    </Shell>
   );
 }

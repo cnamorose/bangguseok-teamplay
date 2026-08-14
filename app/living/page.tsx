@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import RoomShell from "@/app/components/RoomShell";
+import Shell from "@/app/components/Shell";
 import LivingRoom from "./LivingRoom";
 
 export default async function LivingPage() {
@@ -8,8 +8,8 @@ export default async function LivingPage() {
   if (!user) redirect("/login");
 
   return (
-    <RoomShell user={user} title="🛋️ 거실">
+    <Shell user={user}>
       <LivingRoom />
-    </RoomShell>
+    </Shell>
   );
 }

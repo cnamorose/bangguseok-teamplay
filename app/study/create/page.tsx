@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import RoomShell from "@/app/components/RoomShell";
+import Shell from "@/app/components/Shell";
 import Assemble from "./Assemble";
 
 export default async function CreatePage() {
@@ -10,8 +10,8 @@ export default async function CreatePage() {
   if (!user) redirect("/login");
 
   return (
-    <RoomShell user={user} flush>
+    <Shell user={user}>
       <Assemble />
-    </RoomShell>
+    </Shell>
   );
 }

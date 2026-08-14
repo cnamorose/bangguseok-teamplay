@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import RoomShell from "@/app/components/RoomShell";
+import Shell from "@/app/components/Shell";
 import Shelf from "./Shelf";
 
 export default async function BookshelfPage() {
@@ -10,8 +10,8 @@ export default async function BookshelfPage() {
   if (!user) redirect("/login");
 
   return (
-    <RoomShell user={user}>
+    <Shell user={user}>
       <Shelf />
-    </RoomShell>
+    </Shell>
   );
 }

@@ -25,8 +25,9 @@ export const MODES: Record<ModeId, Mode> = {
     id: "study",
     label: "공부방",
     emoji: "📚",
-    home: "/study/bookshelf",
+    home: "/study",
     nav: [
+      { href: "/study", icon: "🏡", label: "홈" },
       { href: "/study/bookshelf", icon: "📚", label: "책장" },
       { href: "/study/create", icon: "✍️", label: "새로 만들기" },
       { href: "/study/evaluate", icon: "🧑‍⚖️", label: "평가단" },
@@ -36,9 +37,10 @@ export const MODES: Record<ModeId, Mode> = {
     id: "career",
     label: "취업방",
     emoji: "💼",
-    home: "/career/desk",
+    home: "/career",
     nav: [
-      { href: "/career/desk", icon: "🗂️", label: "책상" },
+      { href: "/career", icon: "🏡", label: "홈" },
+      { href: "/career/desk", icon: "📚", label: "책장" },
       { href: "/career/experience", icon: "🧰", label: "내 경험" },
       { href: "/career/companies", icon: "🏢", label: "기업 분석" },
       { href: "/career/resume", icon: "📝", label: "자소서 작성" },

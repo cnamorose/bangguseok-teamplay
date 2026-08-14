@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   // 북마크·기존 링크가 404로 떨어지지 않게 넘겨준다.
   async redirects() {
     return [
-      { source: "/bookshelf", destination: "/study/bookshelf", permanent: false },
+      { source: "/bookshelf", destination: "/study", permanent: false },
       { source: "/create", destination: "/study/create", permanent: false },
       { source: "/evaluate", destination: "/study/evaluate", permanent: false },
     ];

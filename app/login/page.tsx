@@ -31,7 +31,7 @@ export default function LoginPage() {
       }
 
       // 성공하면 서버가 알려준 곳(메인 페이지)으로 이동
-      router.push(data.redirectTo || "/study/bookshelf");
+      router.push(data.redirectTo || "/study");
       router.refresh();
     } catch {
       setError("서버 오류가 발생했습니다.");

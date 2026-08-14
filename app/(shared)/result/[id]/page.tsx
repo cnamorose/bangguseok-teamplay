@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import RoomShell from "@/app/components/RoomShell";
+import Shell from "@/app/components/Shell";
 import ResultView from "./ResultView";
 
 export default async function ResultPage({
@@ -16,8 +16,8 @@ export default async function ResultPage({
   const { id } = await params;
 
   return (
-    <RoomShell user={user} title="📖 펼친 책" flush>
+    <Shell user={user}>
       <ResultView id={id} />
-    </RoomShell>
+    </Shell>
   );
 }
