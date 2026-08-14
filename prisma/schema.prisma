@@ -17,7 +17,6 @@ model User {
   email     String   @unique
   password  String
   name      String?
-  theme     String?  // 책장 테마 (StoredTheme JSON 문자열)
   mode      String   @default("study") // 마지막으로 있던 방 (study | career)
   tokenVersion Int   @default(0) // 로그아웃 시 +1 → 발급된 모든 JWT 무효화
   createdAt DateTime @default(now())
@@ -62,6 +61,12 @@ model Result {
   topic      String
   resultData Json?
   filePath   String?
+  /**
+   * 책장에서 사용자가 고른 인덱스 탭 색 ("book-1" ~ "book-6").
+   * 색 이름이 아니라 자리 이름을 담는다 — 테마가 바뀌면 색도 같이 따라가야 한다.
+   * null이면 id에서 뽑아 쓴다 (지정 안 해도 서로 다른 색이 나오게)
+   */
+  color      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -180,6 +185,8 @@ model Application {
   deadline     DateTime?
   status       String    @default("preparing") // preparing | submitted | doc_pass | interview | closed
   pinned       Boolean   @default(false)
+  /** 책상에서 고른 인덱스 탭 색 ("book-1" ~ "book-6"). Result.color와 같은 규칙 */
+  color        String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

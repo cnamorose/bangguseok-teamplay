@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isShelfColor } from "@/lib/shelf-color";
 
 const STATUSES = ["preparing", "submitted", "doc_pass", "interview", "closed"];
 
@@ -48,7 +49,7 @@ export async function GET(
   }
 }
 
-/** 마감·상태·핀 수정 */
+/** 마감·상태·핀·탭 색 수정 */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -64,7 +65,12 @@ export async function PATCH(
     if (denied) return NextResponse.json({ error: denied.error }, { status: denied.status });
 
     const body = await req.json();
-    const data: { deadline?: Date | null; status?: string; pinned?: boolean } = {};
+    const data: {
+      deadline?: Date | null;
+      status?: string;
+      pinned?: boolean;
+      color?: string | null;
+    } = {};
 
     if ("deadline" in body) {
       const raw = String(body.deadline ?? "").trim();
@@ -76,6 +82,12 @@ export async function PATCH(
     }
     if (typeof body.pinned === "boolean") {
       data.pinned = body.pinned;
+    }
+    // null이면 "자동으로 되돌리기"
+    if ("color" in body) {
+      if (body.color === null) data.color = null;
+      else if (isShelfColor(body.color)) data.color = body.color;
+      else return NextResponse.json({ error: "쓸 수 없는 색이에요." }, { status: 400 });
     }
 
     const application = await prisma.application.update({ where: { id }, data });

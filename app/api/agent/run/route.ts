@@ -6,6 +6,7 @@ import { LLMUsage } from "@/lib/ai";
 import { Prisma } from "@prisma/client";
 import { rateLimit, tooManyResponse } from "@/lib/rateLimit";
 import { sseStream } from "@/lib/sse";
+import { isShelfColor } from "@/lib/shelf-color";
 
 // 파이프라인이 길어 시간이 걸리므로 함수 실행 시간을 늘린다
 export const maxDuration = 60;
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
   const rl = rateLimit(`run:${user.id}`, RUN_LIMIT, RUN_WINDOW_MS);
   if (!rl.allowed) return tooManyResponse(rl.retryAfterSec);
 
-  const { topic: rawTopic, detail, teamName, searchPersona, generatePersona, organizePersona, visualizePersona, organizeStyle, criticCount, targetLength } =
+  const { topic: rawTopic, detail, teamName, searchPersona, generatePersona, organizePersona, visualizePersona, organizeStyle, criticCount, targetLength, color } =
     await req.json();
 
   if (!rawTopic || !searchPersona || !generatePersona || !organizePersona || !visualizePersona) {
@@ -66,7 +67,13 @@ export async function POST(req: NextRequest) {
         },
       });
       const result = await prisma.result.create({
-        data: { assemblyId: assembly.id, userId: user.id, topic },
+        data: {
+          assemblyId: assembly.id,
+          userId: user.id,
+          topic,
+          // 안 골랐으면 null — 책장에서 id로 색을 뽑는다
+          color: isShelfColor(color) ? color : null,
+        },
       });
 
       // 오케스트레이터가 각 단계 결과를 저장할 콜백

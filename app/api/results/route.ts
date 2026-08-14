@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
     const select = {
       id: true,
       topic: true,
+      color: true,
       createdAt: true,
       assembly: { select: { name: true } },
     };

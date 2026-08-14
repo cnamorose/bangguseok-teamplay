@@ -36,6 +36,7 @@ export async function GET() {
         deadline: true,
         status: true,
         pinned: true,
+        color: true,
         analyzedAt: true, // 직무 분석 여부
         company: { select: { id: true, name: true, analyzedAt: true } },
         essays: { select: { id: true, charCount: true }, orderBy: { order: "asc" } },
