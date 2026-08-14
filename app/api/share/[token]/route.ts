@@ -79,6 +79,41 @@ export async function GET(
   }
 }
 
+/** 거실에 올리기 / 내리기 (링크는 그대로 살아 있다) */
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ token: string }> }
+) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+    }
+
+    const { token } = await params;
+    const body = await req.json();
+    if (typeof body.listed !== "boolean") {
+      return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
+    }
+
+    const share = await prisma.share.findUnique({
+      where: { token },
+      select: { id: true, ownerId: true },
+    });
+
+    if (!share) return NextResponse.json({ error: "찾을 수 없습니다." }, { status: 404 });
+    if (share.ownerId !== user.id) {
+      return NextResponse.json({ error: "접근 권한이 없습니다." }, { status: 403 });
+    }
+
+    await prisma.share.update({ where: { id: share.id }, data: { listed: body.listed } });
+    return NextResponse.json({ ok: true }, { status: 200 });
+  } catch (error) {
+    console.error("거실 노출 변경 에러:", error);
+    return NextResponse.json({ error: "바꾸지 못했습니다." }, { status: 500 });
+  }
+}
+
 /** 공유 해제 */
 export async function DELETE(
   req: NextRequest,

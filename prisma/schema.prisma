@@ -277,6 +277,13 @@ model Share {
   snapshot Json
   /** link = 주소를 아는 사람 / login = 로그인한 사람만 */
   scope    String  @default("link")
+  /**
+   * 거실에 내놓았나. 켠 것만 남의 눈에 띈다.
+   * scope와 따로 두는 이유: "링크를 아는 사람은 봐도 된다"와
+   * "모두에게 보이는 자리에 올린다"는 다른 결정이다.
+   * 링크만 주고 싶었던 글이 목록에 뜨면 사고다.
+   */
+  listed   Boolean @default(false)
   revoked  Boolean @default(false)
 
   createdAt DateTime @default(now())
@@ -287,6 +294,7 @@ model Share {
 
   @@index([ownerId, createdAt(sort: Desc)])
   @@index([kind, targetId])
+  @@index([listed, revoked, createdAt(sort: Desc)]) // 거실 피드
 }
 
 // 공유된 결과물에 다는 댓글. 익명은 받지 않는다 (신고·차단 문제를 키운다)
