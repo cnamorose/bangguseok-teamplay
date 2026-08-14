@@ -28,17 +28,17 @@ export default function DiffView({
   if (parts.length === 0) return null;
 
   return (
-    <div className="tp-diff">
-      <div className="tp-diff-pane">
-        <div className="tp-diff-head tp-diff-head-del">
+    <div className="ui-diff">
+      <div className="ui-diff-pane">
+        <div className="ui-diff-head">
           {leftLabel} <span>지워진 부분</span>
         </div>
-        <div className="tp-diff-body">
+        <div className="ui-diff-body">
           {parts
             .filter((p) => !p.added)
             .map((p, i) =>
               p.removed ? (
-                <del key={i} className="tp-diff-del">{p.value}</del>
+                <del key={i} className="ui-diff-del">{p.value}</del>
               ) : (
                 <span key={i}>{p.value}</span>
               )
@@ -46,16 +46,16 @@ export default function DiffView({
         </div>
       </div>
 
-      <div className="tp-diff-pane">
-        <div className="tp-diff-head tp-diff-head-add">
+      <div className="ui-diff-pane">
+        <div className="ui-diff-head">
           {rightLabel} <span>더해진 부분</span>
         </div>
-        <div className="tp-diff-body">
+        <div className="ui-diff-body">
           {parts
             .filter((p) => !p.removed)
             .map((p, i) =>
               p.added ? (
-                <ins key={i} className="tp-diff-add">{p.value}</ins>
+                <ins key={i} className="ui-diff-add">{p.value}</ins>
               ) : (
                 <span key={i}>{p.value}</span>
               )

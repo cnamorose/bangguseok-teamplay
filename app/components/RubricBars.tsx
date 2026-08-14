@@ -10,18 +10,18 @@ export default function RubricBars({ breakdown }: { breakdown: ScoreBreakdown[] 
   if (breakdown.length === 0) return null;
 
   return (
-    <div className="tp-rubric">
+    <div className="ui-rubric">
       {breakdown.map((b, i) => {
         const pct = b.maxScore > 0 ? Math.round((b.score / b.maxScore) * 100) : 0;
         return (
-          <div key={i} className="tp-rubric-row">
-            <span className="tp-rubric-label">{b.label}</span>
-            <span className="tp-rubric-bar">
-              <span className="tp-rubric-fill" style={{ width: `${pct}%` }} />
+          <div key={i} className="ui-rubric-row">
+            <span className="ui-rubric-label">{b.label}</span>
+            <span className="ui-rubric-bar">
+              <span className="ui-rubric-fill" style={{ width: `${pct}%` }} />
             </span>
-            <span className="tp-rubric-score">
+            <span className="ui-rubric-score">
               {b.score}
-              <span className="tp-rubric-max">/{b.maxScore}</span>
+              <span>/{b.maxScore}</span>
             </span>
           </div>
         );

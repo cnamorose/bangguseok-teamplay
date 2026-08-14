@@ -6,6 +6,13 @@ import { parseSource } from "@/lib/parse-source";
 import { extractArticleText } from "@/lib/result-text";
 import ShareButton from "@/app/components/ShareButton";
 
+// 결과물 한 편.
+//
+// 예전엔 단계별 기록을 전부 같은 크기로 늘어놓아서, 정작 읽으러 온 글이
+// 검색 로그와 비평가 코멘트 사이에 묻혀 있었다.
+// 이제 완성된 글을 먼저 크게 놓되, 과정은 접지 않고 아래에 그대로 편다 —
+// 누가 무엇을 보고 무엇을 냈는지가 이 앱이 보여주려는 것이라 숨길 이유가 없다.
+
 interface AgentLog {
   id: string;
   stage: string;
@@ -22,11 +29,7 @@ interface ResultData {
   filePath: string | null;
   assembly: {
     name: string;
-    searchPersona: string;
-    generatePersona: string;
-    organizePersona: string;
-    visualizePersona: string;
-  };
+  } | null;
   agentLogs: AgentLog[];
 }
 
@@ -45,6 +48,25 @@ const DIRECTOR_ACTION_LABEL: Record<string, string> = {
   finalize: "✅ 마무리 결정",
 };
 
+/**
+ * 읽을 글을 고른다.
+ * 정리(organize)가 생성(generate)을 다듬은 결과라 그쪽이 우선이고,
+ * 같은 단계가 여러 번 돌았으면 마지막 것이 최종본이다.
+ */
+function pickFinal(logs: AgentLog[]) {
+  const last = (stage: string) =>
+    [...logs].reverse().find((l) => l.stage === stage && l.output?.content);
+  const log = last("organize") || last("generate");
+  return log?.output as { title?: string; content: string } | undefined;
+}
+
+function pickVisual(logs: AgentLog[]) {
+  const log = [...logs].reverse().find((l) => l.stage === "visualize" && l.output?.sections?.length);
+  return log?.output as
+    | { title?: string; sections: { heading: string; content?: string[] }[] }
+    | undefined;
+}
+
 export default function ResultView({ id }: { id: string }) {
   const router = useRouter();
   const [result, setResult] = useState<ResultData | null>(null);
@@ -62,163 +84,216 @@ export default function ResultView({ id }: { id: string }) {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <p className="tp-note">책을 펼치는 중...</p>;
-  if (error) return <p className="tp-note tp-note-error">{error}</p>;
+  if (loading) return <p className="ui-note">불러오는 중…</p>;
+  if (error) return <p className="ui-note is-err">{error}</p>;
   if (!result) return null;
 
+  const doc = pickFinal(result.agentLogs);
+  const visual = pickVisual(result.agentLogs);
+
+  const toEvaluate = () => {
+    const text = extractArticleText(result.resultData);
+    // 평가 페이지가 마운트될 때 읽어서 주제/글을 자동으로 채운다.
+    sessionStorage.setItem("evaluate:prefill", JSON.stringify({ topic: result.topic, text }));
+    router.push("/study/evaluate");
+  };
+
   return (
-    <article className="tp-book-open">
-      {/* 왼쪽 면: 속표지 */}
-      <div className="tp-page tp-page-left">
-        <h1 className="tp-page-title">{result.topic}</h1>
-        <p className="tp-page-sub">{result.assembly?.name}</p>
-        {result.createdAt && (
-          <p className="tp-page-date">
-            {new Date(result.createdAt).toLocaleDateString("ko-KR")}
-          </p>
+    <>
+      <header className="ui-head">
+        <h1>{result.topic}</h1>
+        <p>
+          {result.assembly?.name}
+          {result.assembly?.name && result.createdAt && " · "}
+          {result.createdAt && new Date(result.createdAt).toLocaleDateString("ko-KR")}
+        </p>
+      </header>
+
+      <div className="ui-actions">
+        <button className="ui-btn" onClick={toEvaluate}>
+          🧑‍⚖️ 평가단에게 보내기
+        </button>
+        {result.filePath && (
+          <a className="ui-btn ui-btn-ghost" href={result.filePath} download>
+            📥 내려받기
+          </a>
         )}
+        <ShareButton kind="result" targetId={id} />
+        <button
+          className="ui-btn ui-btn-ghost"
+          style={{ marginLeft: "auto" }}
+          onClick={() => router.push("/study/bookshelf")}
+        >
+          📚 책장으로
+        </button>
+      </div>
 
-        <hr className="tp-rule" />
-
-        <div className="tp-page-actions">
-          {result.filePath && (
-            <a className="tp-btn-download" href={result.filePath} download>
-              📥 결과물 다운로드
-            </a>
-          )}
-          <button
-            className="tp-btn-download"
-            onClick={() => {
-              const text = extractArticleText(result.resultData);
-              // 평가 페이지가 마운트될 때 읽어서 주제/글을 자동으로 채운다.
-              sessionStorage.setItem(
-                "evaluate:prefill",
-                JSON.stringify({ topic: result.topic, text })
-              );
-              router.push("/study/evaluate");
-            }}
-          >
-            🧑‍⚖️ 평가단에게 평가받기
-          </button>
-          <ShareButton kind="result" targetId={id} />
-          <button className="tp-btn-outline" onClick={() => router.push("/study/bookshelf")}>
-            📚 책장으로
-          </button>
+      {doc ? (
+        <article className="ui-doc">
+          {doc.title && <h2>{doc.title}</h2>}
+          <p className="ui-doc-body">{doc.content}</p>
+        </article>
+      ) : (
+        <div className="ui-empty">
+          <h3>완성된 글이 없어요</h3>
+          <p>만드는 도중에 멈춘 것 같아요. 아래에서 어디까지 갔는지 볼 수 있어요.</p>
         </div>
-      </div>
+      )}
 
-      {/* 오른쪽 면: 단계별 결과 */}
-      <div className="tp-page tp-page-right">
-        {result.agentLogs.map((log) => (
-          <section className="tp-entry" key={log.id}>
-            <h3 className="tp-entry-head">{STAGE_LABEL[log.stage] || log.stage}</h3>
-            <StageOutput stage={log.stage} output={log.output} />
-          </section>
-        ))}
-      </div>
-    </article>
+      {visual && (
+        <section className="ui-sec">
+          <div className="ui-sec-head">
+            <h2>{visual.title || "글의 뼈대"}</h2>
+            <p>시각화 담당이 잡은 구성</p>
+          </div>
+          <div className="ui-grid">
+            {visual.sections.map((section, i) => (
+              <div className="ui-panel" key={i}>
+                <h3>{section.heading}</h3>
+                <ul className="ui-list">
+                  {section.content?.map((c, j) => (
+                    <li key={j}>{c}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {result.agentLogs.length > 0 && (
+        <section className="ui-sec">
+          <div className="ui-sec-head">
+            <h2>🧩 팀이 한 일</h2>
+            <p>{result.agentLogs.length}단계 · 누가 무엇을 보고 무엇을 냈는지</p>
+          </div>
+
+          <ol className="ui-steps">
+            {result.agentLogs.map((log, i) => (
+              <li className="ui-step" key={log.id}>
+                <h3 className="ui-step-head">
+                  <span className="ui-step-n">{i + 1}</span>
+                  {STAGE_LABEL[log.stage] || log.stage}
+                  {log.status === "failed" && <span className="ui-badge is-fail">실패</span>}
+                </h3>
+
+                {/* 담당자를 어떤 성격으로 세웠는지 — 결과를 읽는 기준이 된다 */}
+                {log.persona && <p className="ui-step-who">“{log.persona}”</p>}
+
+                <div className="ui-step-body">
+                  <StageOutput stage={log.stage} output={log.output} />
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+    </>
   );
 }
 
-// 단계별로 출력 형태가 달라서 각각 맞게 보여줌
+// 단계마다 나오는 모양이 달라서 각각 맞게 보여준다
 function StageOutput({ stage, output }: { stage: string; output: any }) {
+  if (!output) return <p className="ui-step-text">남은 기록이 없어요.</p>;
+
   if (stage === "search") {
     return (
-      <div>
-        <strong>핵심 포인트</strong>
-        <ul>
-          {output.keyPoints?.map((p: string, i: number) => (
-            <li key={i}>{p}</li>
-          ))}
-        </ul>
+      <>
+        {output.keyPoints?.length > 0 && (
+          <>
+            <p className="ui-step-label">핵심 포인트</p>
+            <ul className="ui-list">
+              {output.keyPoints.map((p: string, i: number) => (
+                <li key={i}>{p}</li>
+              ))}
+            </ul>
+          </>
+        )}
 
-        <strong>출처</strong>
-        <ul>
-          {output.sources?.map((s: string, i: number) => {
-            const { title, url } = parseSource(s);
+        {output.sources?.length > 0 && (
+          <>
+            <p className="ui-step-label">출처</p>
+            <ul className="ui-list">
+              {output.sources.map((s: string, i: number) => {
+                const { title, url } = parseSource(s);
 
-            if (url) {
-              return (
-                <li key={i}>
-                  <a
-                    className="tp-entry-link"
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {title}
-                  </a>
-                </li>
-              );
-            }
+                // URL이 없으면 그냥 텍스트
+                if (!url) return <li key={i}>{s}</li>;
 
-            // URL이 없으면 그냥 텍스트
-            return <li key={i}>{s}</li>;
-          })}
-        </ul>
-      </div>
+                return (
+                  <li key={i}>
+                    <a href={url} target="_blank" rel="noopener noreferrer">
+                      {title}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
+      </>
     );
   }
 
   if (stage === "generate" || stage === "organize") {
     return (
-      <div>
-        <h4>{output.title}</h4>
-        <p className="tp-entry-body">{output.content}</p>
-        {output.feedback && <p className="tp-entry-note">💬 {output.feedback}</p>}
-      </div>
+      <>
+        {output.title && <h4>{output.title}</h4>}
+        <p className="ui-step-text">{output.content}</p>
+        {output.feedback && <p className="ui-step-note">💬 {output.feedback}</p>}
+      </>
     );
   }
 
   if (stage === "visualize") {
     return (
-      <div>
-        <h4>{output.title}</h4>
+      <>
+        {output.title && <h4>{output.title}</h4>}
         {output.sections?.map((section: any, i: number) => (
           <div key={i}>
-            <strong>{section.heading}</strong>
-            <ul>
+            <p className="ui-step-label">{section.heading}</p>
+            <ul className="ui-list">
               {section.content?.map((c: string, j: number) => (
                 <li key={j}>{c}</li>
               ))}
             </ul>
           </div>
         ))}
-      </div>
+      </>
     );
   }
 
   if (stage === "director") {
     return (
-      <div>
-        <div className="tp-badge tp-badge-pass">
+      <>
+        <span className="ui-badge is-pass">
           {DIRECTOR_ACTION_LABEL[output.action] || output.action}
-        </div>
-        <p className="tp-entry-note">{output.reason}</p>
+        </span>
+        {output.reason && <p className="ui-step-note">{output.reason}</p>}
         {output.query && (
-          <p className="tp-entry-note">
+          <p className="ui-step-note">
             <strong>검색어:</strong> {output.query}
           </p>
         )}
-      </div>
+      </>
     );
   }
 
   if (stage === "critic") {
     return (
-      <div>
-        <div className={`tp-badge ${output.pass ? "tp-badge-pass" : "tp-badge-fail"}`}>
+      <>
+        <span className={`ui-badge ${output.pass ? "is-pass" : "is-fail"}`}>
           {output.pass ? "✅ 통과" : "🔄 수정 요청"}
-        </div>
-        <p className="tp-entry-quote">💬 “{output.comment}”</p>
+        </span>
+        {output.comment && <p className="ui-step-note">💬 “{output.comment}”</p>}
         {output.feedback && (
-          <p className="tp-entry-note">
+          <p className="ui-step-note">
             <strong>피드백:</strong> {output.feedback}
           </p>
         )}
-      </div>
+      </>
     );
   }
 
-  return <pre className="tp-entry-raw">{JSON.stringify(output, null, 2)}</pre>;
+  return <pre className="ui-raw">{JSON.stringify(output, null, 2)}</pre>;
 }

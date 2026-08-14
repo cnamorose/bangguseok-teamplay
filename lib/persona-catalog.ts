@@ -7,25 +7,31 @@ export interface PersonaCard {
   description: string; // 사용자에게 보여줄 짧은 설명
   emoji: string;       // 임시 아이콘 (나중에 이미지로 교체 가능)
   line: string;        // 말풍선에 띄울 대사 한 줄
+  /**
+   * 팀 한 줄 소개를 만들 때 이어붙이는 연결형 문구.
+   * 넷을 순서대로 이으면 "깐깐하게 찾아서, 논리로 세우고, 핵심만 남겨, 슬라이드로 냅니다."가 된다.
+   * 그래서 4단계(시각화)만 종결형이고 나머지는 연결형이다.
+   */
+  trait: string;
 }
 
 export const PERSONA_CATALOG: Record<string, PersonaCard[]> = {
   search: [
-    { id: "magnifier", name: "꼼꼼한 돋보기", description: "핵심 출처를 깊이 파고들어 정확하게", emoji: "🔍", line: "출처 하나하나, 제가 다 확인할게요." },
-    { id: "map", name: "다양한 지도", description: "여러 관점을 넓게 훑어 다채롭게", emoji: "🗺️", line: "여기저기 두루 둘러보고 올게요!" },
+    { id: "magnifier", name: "꼼꼼한 돋보기", description: "핵심 출처를 깊이 파고들어 정확하게", emoji: "🔍", line: "출처 하나하나, 제가 다 확인할게요.", trait: "깐깐하게 찾아서" },
+    { id: "map", name: "다양한 지도", description: "여러 관점을 넓게 훑어 다채롭게", emoji: "🗺️", line: "여기저기 두루 둘러보고 올게요!", trait: "두루 훑어서" },
   ],
   generate: [
-    { id: "logic", name: "논리왕", description: "서론-근거-결론의 탄탄한 논증", emoji: "🧠", line: "근거 없는 주장은 그냥 못 넘어가죠." },
-    { id: "story", name: "스토리텔러", description: "이야기와 비유로 몰입감 있게", emoji: "📖", line: "이 얘기, 재밌게 풀어드릴게요." },
+    { id: "logic", name: "논리왕", description: "서론-근거-결론의 탄탄한 논증", emoji: "🧠", line: "근거 없는 주장은 그냥 못 넘어가죠.", trait: "논리로 세우고" },
+    { id: "story", name: "스토리텔러", description: "이야기와 비유로 몰입감 있게", emoji: "📖", line: "이 얘기, 재밌게 풀어드릴게요.", trait: "이야기로 풀고" },
   ],
   organize: [
-    { id: "proofreader", name: "교정관", description: "문법과 문체를 매끄럽게 다듬어요", emoji: "✏️", line: "어색한 문장은 제가 다듬을게요." },
-    { id: "summarizer", name: "요약 전문가", description: "핵심만 남기고 간결하게 압축해요", emoji: "📌", line: "핵심만 딱. 군더더기는 덜어냅니다." },
+    { id: "proofreader", name: "교정관", description: "문법과 문체를 매끄럽게 다듬어요", emoji: "✏️", line: "어색한 문장은 제가 다듬을게요.", trait: "문장을 다듬어" },
+    { id: "summarizer", name: "요약 전문가", description: "핵심만 남기고 간결하게 압축해요", emoji: "📌", line: "핵심만 딱. 군더더기는 덜어냅니다.", trait: "핵심만 남겨" },
   ],
   visualize: [
-    { id: "typewriter", name: "인간 타자기", description: "실무 보고서로 정돈해 드려요 (.docx)", emoji: "📄", line: "보고서 양식은 제게 맡기세요." },
-    { id: "slideMaker", name: "슬라이드 장인", description: "발표용 슬라이드로 만들어요 (.pptx)", emoji: "📊", line: "한 장에 하나씩, 시원하게 갑니다." },
-    { id: "alchemist", name: "초안 연금술사", description: "학술 논문 초안으로 빚어내요 (.docx)", emoji: "📜", line: "논문의 격식, 제대로 갖춰드리죠." },
+    { id: "typewriter", name: "인간 타자기", description: "실무 보고서로 정돈해 드려요 (.docx)", emoji: "📄", line: "보고서 양식은 제게 맡기세요.", trait: "보고서로 냅니다" },
+    { id: "slideMaker", name: "슬라이드 장인", description: "발표용 슬라이드로 만들어요 (.pptx)", emoji: "📊", line: "한 장에 하나씩, 시원하게 갑니다.", trait: "슬라이드로 냅니다" },
+    { id: "alchemist", name: "초안 연금술사", description: "학술 논문 초안으로 빚어내요 (.docx)", emoji: "📜", line: "논문의 격식, 제대로 갖춰드리죠.", trait: "논문으로 냅니다" },
   ],
 };
 

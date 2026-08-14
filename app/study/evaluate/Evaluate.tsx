@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DiffView from "@/app/components/DiffView";
 import { parseSource } from "@/lib/parse-source";
 import { extractArticleText } from "@/lib/result-text";
 import { readSse } from "@/lib/sse-client";
 import RubricBars, { ScoreBreakdown } from "@/app/components/RubricBars";
+
+// 평가단 — 왼쪽에 글, 오른쪽에 결과.
+//
+// 세로로 늘어놓으면 글과 평가가 같이 안 보인다. 평가를 읽는 내내 원문을 봐야 하므로
+// 두 칸으로 나누고 화면 높이에 가둔다. 스크롤은 각 칸 안에서만 일어난다.
+// 오른쪽은 평가자 3명 · 회의 · 바뀐 곳을 넘겨 본다.
 
 interface EvalResult {
   evaluatorId: string;
@@ -40,15 +46,15 @@ const SPEAKER: Record<string, { emoji: string; side: "left" | "right" | "center"
 
 function SourceList({ sources }: { sources: string[] }) {
   return (
-    <div className="tp-eval-src">
-      <p className="tp-eval-src-title">참고한 자료</p>
-      <ul>
+    <div className="ui-srcs">
+      <p>참고한 자료</p>
+      <ul className="ui-list">
         {sources.map((s, i) => {
           const { title, url } = parseSource(s);
           return (
             <li key={i}>
               {url ? (
-                <a className="tp-entry-link" href={url} target="_blank" rel="noopener noreferrer">
+                <a href={url} target="_blank" rel="noopener noreferrer">
                   {title}
                 </a>
               ) : (
@@ -67,7 +73,7 @@ interface PickerItem {
   id: string;
   topic: string;
   createdAt: string;
-  assembly: { name: string };
+  assembly: { name: string } | null;
 }
 
 const PICKER_PAGE_SIZE = 5;
@@ -133,68 +139,65 @@ function BookshelfPicker({
   };
 
   return (
-    <div className="tp-modal-overlay" role="dialog" aria-modal="true" onClick={onClose}>
-      <div className="tp-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="tp-modal-head">
-          <span className="tp-modal-title">📚 책장에서 꺼내오기</span>
-          <button type="button" className="tp-modal-close" onClick={onClose} aria-label="닫기">
+    <div className="ui-overlay" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="ui-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="ui-modal-head">
+          <h3>📚 책장에서 꺼내오기</h3>
+          <button type="button" className="ui-modal-x" onClick={onClose} aria-label="닫기">
             ✕
           </button>
         </div>
 
-        <div className="tp-modal-body">
-          {error && <p className="tp-note tp-note-error">{error}</p>}
+        <div className="ui-modal-body">
+          {error && <p className="ui-note is-err">{error}</p>}
 
           {/* 처음 열 때(아직 아무것도 없을 때)만 안내 문구 */}
-          {!error && items.length === 0 && loading && (
-            <p className="tp-note">책장을 펼치는 중...</p>
-          )}
+          {!error && items.length === 0 && loading && <p className="ui-note">책장을 펼치는 중…</p>}
           {!error && items.length === 0 && !loading && (
-            <p className="tp-note">아직 책장에 꽂힌 책이 없어요.</p>
+            <p className="ui-note">아직 책장에 꽂힌 책이 없어요.</p>
           )}
 
           {/* 페이지를 넘기는 중에도 목록은 유지하고, 살짝 흐리게만 (모달은 고정) */}
           {!error && items.length > 0 && (
-            <div className={loading ? "tp-picker-list tp-picker-list-busy" : "tp-picker-list"}>
+            <div className={loading ? "ui-form is-busy" : "ui-form"} style={{ gap: 8 }}>
               {items.map((item) => (
                 <button
                   key={item.id}
                   type="button"
-                  className="tp-picker-row"
+                  className="ui-row"
                   onClick={() => pick(item)}
                   disabled={pickingId !== null || loading}
                 >
-                  <span className="tp-picker-row-main">
-                    <span className="tp-picker-row-title">{item.topic}</span>
-                    <span className="tp-picker-row-meta">
-                      {item.assembly?.name} · {new Date(item.createdAt).toLocaleDateString("ko-KR")}
+                  <span className="ui-row-t">
+                    <b>{item.topic}</b>
+                    <span>
+                      {item.assembly?.name} ·{" "}
+                      {new Date(item.createdAt).toLocaleDateString("ko-KR")}
                     </span>
                   </span>
-                  <span className="tp-picker-row-arrow">
-                    {pickingId === item.id ? "…" : "꺼내오기 →"}
-                  </span>
+                  <span className="ui-row-go">{pickingId === item.id ? "…" : "꺼내오기 →"}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        <div className="tp-modal-foot">
+        <div className="ui-modal-foot">
           <button
             type="button"
-            className="tp-pager-arrow"
+            className="ui-iconround"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={loading || page <= 1}
             aria-label="이전"
           >
             ‹
           </button>
-          <span className="tp-picker-page">
+          <span className="ui-pageno">
             {page} / {totalPages}
           </span>
           <button
             type="button"
-            className="tp-pager-arrow"
+            className="ui-iconround"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={loading || page >= totalPages}
             aria-label="다음"
@@ -264,7 +267,7 @@ export default function Evaluate() {
   // 새 메시지가 오면 채팅 맨 아래로 스크롤
   const chatEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages, discussing]);
 
   // 평가가 도착하면 그 평가자 페이지로 자동 이동
@@ -277,7 +280,7 @@ export default function Evaluate() {
 
   // 논의를 시작하면 회의 페이지로 (수정본은 회의 페이지 우측에 함께 뜸)
   useEffect(() => {
-    if (discussStarted) setPage(EVALUATORS.length); // 회의 페이지
+    if (discussStarted) setPage(EVALUATORS.length);
   }, [discussStarted]);
 
   // 파일 하나를 파싱해서 주제/글 채우기 (업로드/드롭 공용)
@@ -418,7 +421,7 @@ export default function Evaluate() {
 
     setLoading(true);
     setResults([]);
-    setProgress("평가단을 소집하는 중...");
+    setProgress("평가단을 소집하는 중…");
     // 새로 평가받으면 저장 상태 초기화 (새 레코드가 생성됨)
     setEvaluationId(null);
     setSaveState("idle");
@@ -471,7 +474,7 @@ export default function Evaluate() {
     setDiscussing(true);
     setMessages([]);
     setOriginalForDiff(text); // 비교 기준 스냅샷
-    setDiscussProgress("평가단을 회의실로 모으는 중...");
+    setDiscussProgress("평가단을 회의실로 모으는 중…");
 
     // 이 논의에서 나온 수정본을 스트림 도중 담아뒀다가, 끝나면 저장에 쓴다.
     let revisedFromDiscuss = "";
@@ -548,277 +551,302 @@ export default function Evaluate() {
   const nextIdx = enabledIdx.find((i) => i > cur);
 
   return (
-    <div className="tp-assemble">
-      {/* ── 좌측: 주제 + 글 (높이 채움) ── */}
-      <div className="tp-col">
-        {/* 책장에서 기존 결과물 꺼내오기 */}
-        <button type="button" className="tp-upload" onClick={() => setPickerOpen(true)}>
-          📚 책장에서 꺼내오기
-        </button>
+    <>
+      <header className="ui-head">
+        <h1>평가단</h1>
+        <p>글을 올리면 세 명이 각자 다른 눈으로 봐요.</p>
+      </header>
 
-        {/* 파일 업로드(클릭) + 드래그 앤 드롭 → 주제/글 자동 채우기 */}
-        <label
-          className={
-            "tp-upload" +
-            (parsing ? " tp-upload-busy" : "") +
-            (dragActive ? " tp-upload-drag" : "")
-          }
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <input
-            type="file"
-            accept={ACCEPT_EXT.join(",")}
-            onChange={handleFile}
-            disabled={parsing}
-            hidden
-          />
-          {parsing
-            ? "📄 파일을 읽는 중..."
-            : dragActive
-            ? "📥 여기에 놓으세요"
-            : "📎 파일 불러오기 · 드래그해서 놓기 (.txt / .docx / .hwp)"}
-        </label>
-
-        <label className="tp-field">
-          <span className="tp-label">주제</span>
-          <input
-            className="tp-input"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="예: 군중심리의 이해"
-          />
-        </label>
-
-        <label className="tp-field tp-field-grow">
-          <span className="tp-label">글</span>
-          <textarea
-            className="tp-textarea"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="평가받을 글을 붙여넣으세요."
-          />
-        </label>
-
-        {/* 글자수 (메모장처럼) */}
-        <p className="tp-charcount">
-          공백 포함 <strong>{charsWithSpace.toLocaleString("ko-KR")}</strong>자 · 공백 제외{" "}
-          <strong>{charsNoSpace.toLocaleString("ko-KR")}</strong>자
-        </p>
-
-        {error && <p className="tp-error">{error}</p>}
-
-        <div style={{ display: "flex", gap: 10 }}>
-          <button className="tp-btn" onClick={handleEvaluate} disabled={loading} style={{ flex: 1 }}>
-            {loading ? progress : "🧑‍⚖️ 평가 받기"}
-          </button>
-          {(results.length > 0 || discussStarted) && (
+      <div className="ui-eval">
+        {/* ── 왼쪽: 평가받을 글 + 점수판 ── */}
+        <div className="ui-evcol">
+          <div className="ui-actions">
             <button
-              className="tp-btn-outline"
-              onClick={handleReset}
-              disabled={loading || discussing}
-              title="전부 비우고 처음부터"
-              style={{ marginTop: 4 }}
+              type="button"
+              className="ui-btn ui-btn-ghost"
+              onClick={() => setPickerOpen(true)}
             >
-              🧹 초기화
+              📚 책장에서 꺼내오기
             </button>
-          )}
-        </div>
 
-        {/* 자동 저장 상태 (평가가 끝나면 책장에 자동 저장됨) */}
-        {allDone && saveState !== "idle" && (
-          <p className={saveState === "error" ? "tp-save-note tp-save-note-error" : "tp-save-note"}>
-            {saveState === "saving"
-              ? "저장 중..."
-              : saveState === "saved"
-              ? "✅ 책장에 자동 저장됨 (수정본이 나오면 함께 갱신돼요)"
-              : "⚠️ 자동 저장에 실패했어요. 다시 평가받거나 논의하면 재시도해요."}
+            {/* 파일 업로드(클릭) + 드래그 앤 드롭 → 주제/글 자동 채우기 */}
+            <label
+              className={"ui-drop" + (parsing ? " is-busy" : "") + (dragActive ? " is-over" : "")}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <input
+                type="file"
+                accept={ACCEPT_EXT.join(",")}
+                onChange={handleFile}
+                disabled={parsing}
+                hidden
+              />
+              {parsing
+                ? "📄 읽는 중…"
+                : dragActive
+                ? "📥 여기에 놓으세요"
+                : "📎 파일 놓기 (.txt / .docx / .hwp)"}
+            </label>
+          </div>
+
+          <label className="ui-field">
+            <span>주제</span>
+            <input
+              className="ui-input"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="예: 군중심리의 이해"
+            />
+          </label>
+
+          <label className="ui-field is-grow">
+            <span>글</span>
+            <textarea
+              className="ui-textarea"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="평가받을 글을 붙여넣으세요."
+            />
+          </label>
+
+          <p className="ui-count">
+            공백 포함 <strong>{charsWithSpace.toLocaleString("ko-KR")}</strong>자 · 공백 제외{" "}
+            <strong>{charsNoSpace.toLocaleString("ko-KR")}</strong>자
           </p>
-        )}
 
-        {/* 점수판 */}
-        <div className="tp-scoreboard">
-          <div className="tp-scoreboard-head">🏅 점수판</div>
-          {EVALUATORS.map((ev, i) => {
-            const r = byId(ev.id);
-            return (
+          {error && <p className="ui-note is-err">{error}</p>}
+
+          <div className="ui-actions">
+            <button
+              className="ui-btn"
+              onClick={handleEvaluate}
+              disabled={loading}
+              style={{ flex: 1, justifyContent: "center" }}
+            >
+              {loading ? progress : "🧑‍⚖️ 평가 받기"}
+            </button>
+            {(results.length > 0 || discussStarted) && (
               <button
-                key={ev.id}
-                type="button"
-                className="tp-score-row"
-                aria-current={cur === i}
-                onClick={() => setPage(i)}
+                className="ui-btn ui-btn-ghost"
+                onClick={handleReset}
+                disabled={loading || discussing}
+                title="전부 비우고 처음부터"
               >
-                <span className="tp-score-emoji">{ev.emoji}</span>
-                <span className="tp-score-name">
-                  {ev.name} <span className="tp-score-tag">· {ev.scoreLabel}</span>
-                </span>
-                <span className={r ? "tp-score-val" : "tp-score-val tp-score-val-empty"}>
-                  {r ? r.score : "—"}
-                  <span className="tp-score-max"> / {ev.maxScore}</span>
-                </span>
+                🧹
               </button>
-            );
-          })}
-        </div>
-      </div>
+            )}
+          </div>
 
-      {/* ── 우측: 페이지로 넘겨 보기 ── */}
-      <div className="tp-col tp-col-paged">
-        <p className="tp-page-name">{PAGE_LABEL[curKey]}</p>
+          {/* 자동 저장 상태 (평가가 끝나면 책장에 자동 저장됨) */}
+          {allDone && saveState !== "idle" && (
+            <p className={saveState === "error" ? "ui-note is-err" : "ui-hint"}>
+              {saveState === "saving"
+                ? "저장 중…"
+                : saveState === "saved"
+                ? "✅ 책장에 자동 저장됨 (수정본이 나오면 함께 갱신돼요)"
+                : "⚠️ 자동 저장에 실패했어요. 다시 평가받거나 논의하면 재시도해요."}
+            </p>
+          )}
 
-        <div className="tp-page-view">
-          {/* 평가자 한 명 */}
-          {EVALUATORS.some((e) => e.id === curKey) &&
-            (() => {
-              const ev = EVALUATORS.find((e) => e.id === curKey)!;
+          {/* 점수판 — 누르면 그 평가자 페이지로 */}
+          <div className="ui-board">
+            <p>🏅 점수판</p>
+            {EVALUATORS.map((ev, i) => {
               const r = byId(ev.id);
               return (
-                <div className={r ? "tp-judge tp-judge-done" : "tp-judge"}>
-                  <div className="tp-judge-top">
-                    <span className="tp-judge-face">{ev.emoji}</span>
-                    <span className="tp-judge-id">
-                      <span className="tp-judge-name">{ev.name}</span>
-                      <span className="tp-judge-role">{ev.role}</span>
-                    </span>
-                    {r ? (
-                      <span className="tp-judge-score">
-                        {r.scoreLabel} {r.score}/{r.maxScore}
-                      </span>
-                    ) : (
-                      <span className="tp-judge-wait">{loading ? "평가 중" : "대기 중"}</span>
-                    )}
-                  </div>
-
-                  {r ? (
-                    <>
-                      {r.breakdown && <RubricBars breakdown={r.breakdown} />}
-                      <p className="tp-judge-body">{r.comment}</p>
-                      {r.sources && r.sources.length > 0 && <SourceList sources={r.sources} />}
-                    </>
-                  ) : loading ? (
-                    <div className="tp-judge-typing">
-                      <span /><span /><span />
-                    </div>
-                  ) : (
-                    <p className="tp-judge-pending">글을 입력하고 평가를 받아보세요.</p>
-                  )}
-                </div>
-              );
-            })()}
-
-          {/* 회의: 설정 → 채팅 */}
-          {curKey === "discuss" &&
-            (!discussStarted ? (
-              <div className="tp-sub">
-                <p className="tp-sub-title">💬 평가단에게 더 논의받기</p>
-                <p className="tp-sub-desc">
-                  평가단이 단톡방에서 토론하며 구체적인 수정 방향을 제안해요.
-                </p>
-
-                <p className="tp-col-title" style={{ margin: "0 0 8px" }}>📚 인간 도서관 발언</p>
-                <div className="tp-choices" style={{ marginBottom: 14 }}>
-                  {[1, 2, 3].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className="tp-chip"
-                      aria-pressed={librarianTurns === n}
-                      onClick={() => setLibrarianTurns(n)}
-                    >
-                      {n}번
-                    </button>
-                  ))}
-                </div>
-
-                <p className="tp-col-title" style={{ margin: "0 0 8px" }}>✍️ 글조합 천재 발언</p>
-                <div className="tp-choices" style={{ marginBottom: 16 }}>
-                  {[1, 2, 3].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className="tp-chip"
-                      aria-pressed={wordsmithTurns === n}
-                      onClick={() => setWordsmithTurns(n)}
-                    >
-                      {n}번
-                    </button>
-                  ))}
-                </div>
-
-                <p className="tp-col-title" style={{ margin: "0 0 8px" }}>
-                  🙋 내 의견 <span style={{ fontWeight: 400, opacity: 0.6 }}>(선택 · 수정본에 반영)</span>
-                </p>
-                <textarea
-                  className="tp-textarea"
-                  value={userOpinion}
-                  onChange={(e) => setUserOpinion(e.target.value)}
-                  placeholder="수정본에 꼭 반영했으면 하는 점을 적어주세요. 평가단 지적보다 우선 반영돼요. (예: 도입부는 그대로 두고, 결론만 더 강하게)"
-                  rows={3}
-                  style={{ width: "100%", boxSizing: "border-box", marginBottom: 16, minHeight: 84 }}
-                />
-
-                <p className="tp-col-title" style={{ margin: "0 0 8px" }}>
-                  📏 수정본 목표 글자수{" "}
-                  <span style={{ fontWeight: 400, opacity: 0.6 }}>(선택 · 공백 포함 ±50자)</span>
-                </p>
-                <input
-                  className="tp-input"
-                  type="number"
-                  min={0}
-                  value={revisionTargetLength}
-                  onChange={(e) => setRevisionTargetLength(e.target.value)}
-                  placeholder="예: 1000 (비워두면 길이 제한 없음)"
-                  style={{ width: "100%", boxSizing: "border-box", marginBottom: 16 }}
-                />
-
-                <button className="tp-btn" onClick={handleDiscuss} style={{ width: "100%" }}>
-                  논의 시작
+                <button
+                  key={ev.id}
+                  type="button"
+                  className="ui-board-row"
+                  aria-current={cur === i}
+                  onClick={() => setPage(i)}
+                >
+                  <span className="ui-board-face">{ev.emoji}</span>
+                  <span className="ui-board-name">
+                    {ev.name} <span>· {ev.scoreLabel}</span>
+                  </span>
+                  <span className={r ? "ui-board-val" : "ui-board-val is-empty"}>
+                    {r ? r.score : "—"}
+                    <span> / {ev.maxScore}</span>
+                  </span>
                 </button>
-              </div>
-            ) : (
-              <div className="tp-meeting">
-                {/* 좌: 폰 채팅 (넓고 길게) */}
-                <div className="tp-phone tp-phone-fill">
-                  <div className="tp-phone-bar">
-                    <div className="tp-phone-notch" />
-                    <div className="tp-phone-title">💬 평가단 회의</div>
-                    <div className="tp-phone-sub">평가원 · 인간 도서관 · 글조합 천재</div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── 오른쪽: 넘겨 보기 ── */}
+        <div className="ui-evcol">
+          <p className="ui-pagetitle">{PAGE_LABEL[curKey]}</p>
+
+          <div className="ui-pagebody">
+            {/* 평가자 한 명 */}
+            {EVALUATORS.some((e) => e.id === curKey) &&
+              (() => {
+                const ev = EVALUATORS.find((e) => e.id === curKey)!;
+                const r = byId(ev.id);
+                return (
+                  <article className={r ? "ui-judge is-done" : "ui-judge"}>
+                    <div className="ui-judge-top">
+                      <span className="ui-judge-face">{ev.emoji}</span>
+                      <span className="ui-judge-t">
+                        <b>{ev.name}</b>
+                        <span>{ev.role}</span>
+                      </span>
+                      {r ? (
+                        <span className="ui-judge-score">
+                          <b>{r.score}</b>
+                          <span>
+                            /{r.maxScore} {r.scoreLabel}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="ui-judge-wait">{loading ? "보는 중" : "대기 중"}</span>
+                      )}
+                    </div>
+
+                    {r ? (
+                      <>
+                        {r.breakdown && <RubricBars breakdown={r.breakdown} />}
+                        <p className="ui-judge-body">{r.comment}</p>
+                        {r.sources && r.sources.length > 0 && <SourceList sources={r.sources} />}
+                      </>
+                    ) : loading ? (
+                      <div className="ui-typing">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    ) : (
+                      <p className="ui-judge-body">글을 올리고 평가를 받아보세요.</p>
+                    )}
+                  </article>
+                );
+              })()}
+
+            {/* 회의: 설정 → 채팅 */}
+            {curKey === "discuss" &&
+              (!discussStarted ? (
+                <div className="ui-form">
+                  <p className="ui-hint">
+                    평가단이 단톡방에서 토론하며 구체적인 수정 방향을 제안하고, 수정본을 내놔요.
+                  </p>
+
+                  <div className="ui-form-row">
+                    <div className="ui-field">
+                      <span>📚 인간 도서관 발언</span>
+                      <div className="ui-actions">
+                        {[1, 2, 3].map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            className="ui-chip"
+                            aria-pressed={librarianTurns === n}
+                            onClick={() => setLibrarianTurns(n)}
+                          >
+                            {n}번
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="ui-field">
+                      <span>✍️ 글조합 천재 발언</span>
+                      <div className="ui-actions">
+                        {[1, 2, 3].map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            className="ui-chip"
+                            aria-pressed={wordsmithTurns === n}
+                            onClick={() => setWordsmithTurns(n)}
+                          >
+                            {n}번
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="tp-chat">
-                    <div className="tp-chat-day">회의 시작</div>
+                  <label className="ui-field">
+                    <span>
+                      🙋 내 의견 <em>(선택 · 평가단 지적보다 우선 반영돼요)</em>
+                    </span>
+                    <textarea
+                      className="ui-textarea"
+                      value={userOpinion}
+                      onChange={(e) => setUserOpinion(e.target.value)}
+                      placeholder="수정본에 꼭 반영했으면 하는 점을 적어주세요. (예: 도입부는 그대로 두고, 결론만 더 강하게)"
+                      rows={3}
+                    />
+                  </label>
+
+                  <label className="ui-field is-narrow">
+                    <span>
+                      📏 수정본 목표 글자수 <em>(선택 · 공백 포함 ±50자)</em>
+                    </span>
+                    <input
+                      className="ui-input"
+                      type="number"
+                      min={0}
+                      value={revisionTargetLength}
+                      onChange={(e) => setRevisionTargetLength(e.target.value)}
+                      placeholder="예: 1000 (비워두면 제한 없음)"
+                    />
+                  </label>
+
+                  <div className="ui-actions is-end">
+                    <button className="ui-btn" onClick={handleDiscuss}>
+                      💬 논의 시작
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="ui-meeting">
+                  {/* 좌: 단톡방 */}
+                  <div className="ui-chat">
+                    <div className="ui-chat-day">{discussProgress || "회의 시작"}</div>
 
                     {messages.map((m, i) => {
                       const info = SPEAKER[m.speakerId] ?? SPEAKER.chief;
 
                       if (info.side === "center") {
                         return (
-                          <div key={i} className="tp-msg-notice">
-                            <p className="tp-notice-who">{info.emoji} {m.speakerName}</p>
-                            <p className="tp-notice-text">{m.message}</p>
+                          <div key={i} className="ui-notice">
+                            <p className="ui-notice-who">
+                              {info.emoji} {m.speakerName}
+                            </p>
+                            <p>{m.message}</p>
                           </div>
                         );
                       }
 
                       return (
-                        <div key={i} className={`tp-msg tp-msg-${info.side}`}>
-                          <div className="tp-chat-avatar">{info.emoji}</div>
-                          <div className="tp-msg-col">
-                            <span className="tp-msg-who">{m.speakerName}</span>
-                            <div className="tp-chat-bubble">{m.message}</div>
+                        <div
+                          key={i}
+                          className={`ui-msg${info.side === "right" ? " is-right" : ""}`}
+                        >
+                          <span className="ui-msg-face">{info.emoji}</span>
+                          <div className="ui-msg-col">
+                            <span className="ui-msg-who">{m.speakerName}</span>
+                            <div className="ui-bubble">{m.message}</div>
                           </div>
                         </div>
                       );
                     })}
 
                     {discussing && (
-                      <div className="tp-msg tp-msg-left">
-                        <div className="tp-chat-avatar">💬</div>
-                        <div className="tp-msg-col">
-                          <div className="tp-chat-bubble tp-typing">
-                            <span /><span /><span />
+                      <div className="ui-msg">
+                        <span className="ui-msg-face">💬</span>
+                        <div className="ui-msg-col">
+                          <div className="ui-bubble">
+                            <span className="ui-typing">
+                              <span />
+                              <span />
+                              <span />
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -826,87 +854,84 @@ export default function Evaluate() {
 
                     <div ref={chatEndRef} />
                   </div>
-                </div>
 
-                {/* 우: 실제 수정본 */}
-                <div className="tp-meeting-side">
-                  <div className="tp-meeting-side-head">
-                    <span className="tp-meeting-side-title">✨ 수정본</span>
-                    {revisedText && (
-                      <button
-                        className="tp-btn-sm"
-                        onClick={() => {
-                          navigator.clipboard.writeText(revisedText);
-                          alert("수정본이 복사되었습니다.");
-                        }}
-                      >
-                        📋 복사
-                      </button>
-                    )}
-                  </div>
-                  <div className="tp-meeting-side-body">
-                    {revisedText ? (
-                      <div className="tp-revision-plain">{revisedText}</div>
-                    ) : (
-                      <div className="tp-meeting-empty">
-                        {discussing
-                          ? "회의가 끝나면\n수정된 글이 여기에 나타나요."
-                          : "아직 수정본이 없어요."}
-                      </div>
-                    )}
+                  {/* 우: 실제 수정본 */}
+                  <div className="ui-revision">
+                    <div className="ui-revision-head">
+                      <h3>✨ 수정본</h3>
+                      {revisedText && (
+                        <button
+                          className="ui-btn ui-btn-ghost"
+                          style={{ marginLeft: "auto", padding: "6px 12px", fontSize: 12.5 }}
+                          onClick={() => navigator.clipboard.writeText(revisedText)}
+                        >
+                          📋 복사
+                        </button>
+                      )}
+                    </div>
+                    <div className="ui-revision-body">
+                      {revisedText || (
+                        <span className="ui-hint">
+                          {discussing
+                            ? "회의가 끝나면 수정된 글이 여기에 나타나요."
+                            : "아직 수정본이 없어요."}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          {/* 바뀐 곳: 내 글 | 수정본 (1:1) */}
-          {curKey === "diff" && revisedText && (
-            <DiffView original={originalForDiff} revised={revisedText} />
-          )}
-        </div>
+              ))}
 
-        {/* 하단 페이지네이션 */}
-        <div className="tp-pager">
-          <button
-            type="button"
-            className="tp-pager-arrow"
-            onClick={() => prevIdx !== undefined && setPage(prevIdx)}
-            disabled={prevIdx === undefined}
-            aria-label="이전"
-          >
-            ‹
-          </button>
-
-          <div className="tp-pager-dots">
-            {pages.map((p, i) => (
-              <button
-                key={p.key}
-                type="button"
-                className="tp-pager-dot"
-                aria-current={i === cur}
-                disabled={!pageEnabled(p.key)}
-                onClick={() => setPage(i)}
-                title={PAGE_LABEL[p.key]}
-              >
-                {p.emoji}
-              </button>
-            ))}
+            {/* 바뀐 곳: 내 글 | 수정본 (1:1) */}
+            {curKey === "diff" && revisedText && (
+              <DiffView original={originalForDiff} revised={revisedText} />
+            )}
           </div>
 
-          <button
-            type="button"
-            className="tp-pager-arrow"
-            onClick={() => nextIdx !== undefined && setPage(nextIdx)}
-            disabled={nextIdx === undefined}
-            aria-label="다음"
-          >
-            ›
-          </button>
+          {/* 하단 페이지 넘기기 */}
+          <div className="ui-pager">
+            <button
+              type="button"
+              className="ui-iconround"
+              onClick={() => prevIdx !== undefined && setPage(prevIdx)}
+              disabled={prevIdx === undefined}
+              aria-label="이전"
+            >
+              ‹
+            </button>
+
+            <div className="ui-dots">
+              {pages.map((p, i) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  className="ui-dot"
+                  aria-current={i === cur}
+                  disabled={!pageEnabled(p.key)}
+                  onClick={() => setPage(i)}
+                  title={PAGE_LABEL[p.key]}
+                >
+                  {p.emoji}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="ui-iconround"
+              onClick={() => nextIdx !== undefined && setPage(nextIdx)}
+              disabled={nextIdx === undefined}
+              aria-label="다음"
+            >
+              ›
+            </button>
+          </div>
         </div>
       </div>
 
       {pickerOpen && (
         <BookshelfPicker onPick={handlePickFromShelf} onClose={() => setPickerOpen(false)} />
       )}
-    </div>
+    </>
   );
 }
