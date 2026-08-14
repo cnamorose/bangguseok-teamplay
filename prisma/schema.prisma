@@ -30,6 +30,8 @@ model User {
   applications Application[]
   experiences  Experience[]
   interviews   Interview[]
+  shares       Share[]
+  comments     Comment[]
 }
 
 model Assembly {
@@ -247,6 +249,52 @@ model Interview {
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([applicationId])
+}
+
+// ── 거실: 공유와 댓글 ──
+//
+// 공유할 수 있는 건 '결과물'뿐이다 (공부방 책 · 자소서 문항).
+// 경험·기업분석·면접은 사적인 재료라 공유 대상이 아니다.
+//
+// 원본을 라이브로 읽지 않고 공유 시점의 스냅샷을 저장한다.
+// 그래야 (1) 나중에 원본에 필드가 늘어도 새지 않고
+//      (2) 원본을 고쳐도 남이 보던 내용이 갑자기 바뀌지 않는다.
+model Share {
+  id       String @id @default(uuid())
+  token    String @unique // 주소에 쓰는 키
+  ownerId  String
+  kind     String // result | essay
+  targetId String
+
+  /** 공개할 내용만 담긴 스냅샷 (lib/share/snapshot.ts가 만든다) */
+  snapshot Json
+  /** link = 주소를 아는 사람 / login = 로그인한 사람만 */
+  scope    String  @default("link")
+  revoked  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  comments Comment[]
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([kind, targetId])
+}
+
+// 공유된 결과물에 다는 댓글. 익명은 받지 않는다 (신고·차단 문제를 키운다)
+model Comment {
+  id      String @id @default(uuid())
+  shareId String
+  userId  String
+  content String
+
+  createdAt DateTime @default(now())
+
+  share Share @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([shareId, createdAt])
 }
 
 model Evaluation {

@@ -6,13 +6,14 @@ import Link from "next/link";
 import ThemeCustomizer from "./ThemeCustomizer";
 import SegmentedToggle from "./SegmentedToggle";
 import { applyTheme, loadTheme, saveTheme } from "@/lib/theme";
-import { MODES, MODE_LIST, ModeId, modeFromPath } from "@/lib/modes";
+import { LIVING, MODES, MODE_LIST, ModeId, modeFromPath, toModeId } from "@/lib/modes";
 
 export interface RoomUser {
   id: string;
   email: string;
   name: string | null;
   theme?: string | null; // DB에 저장된 StoredTheme JSON 문자열
+  mode?: string | null;  // 마지막으로 있던 방
 }
 
 export default function RoomShell({
@@ -53,12 +54,17 @@ export default function RoomShell({
     applyTheme(loadTheme());
   }, [user.theme]);
 
-  // 지금 어느 방인지는 URL이 정한다 (DB의 user.mode는 '어디로 보낼지' 기억용일 뿐)
-  const mode = modeFromPath(pathname);
+  // 지금 어느 방인지는 URL이 정한다.
+  // 거실처럼 방 밖인 화면에선 마지막에 있던 방의 메뉴를 그대로 둔다
+  // (그래야 취업방에서 거실에 들렀다 나올 때 메뉴가 공부방으로 뒤집히지 않는다)
+  const pathMode = modeFromPath(pathname);
+  const mode = pathMode ?? toModeId(user.mode);
   const nav = MODES[mode].nav;
+  const inLiving = pathname.startsWith(LIVING.href);
 
   const current = nav.find((item) => item.href === pathname);
-  const heading = title ?? (current ? `${current.icon} ${current.label}` : "");
+  const heading =
+    title ?? (inLiving ? `${LIVING.icon} ${LIVING.label}` : current ? `${current.icon} ${current.label}` : "");
 
   // 방 이동: URL을 바꾸고, 다음에 들어올 때를 위해 DB에도 기억시킨다
   const switchMode = (next: ModeId) => {
@@ -126,6 +132,16 @@ export default function RoomShell({
               <span>{item.label}</span>
             </Link>
           ))}
+
+          {/* 거실은 방이 아니라 방 밖이다. 두 방 어디서 눌러도 같은 곳으로 간다 */}
+          <Link
+            href={LIVING.href}
+            className="tp-nav-item tp-nav-shared"
+            aria-current={inLiving ? "page" : undefined}
+          >
+            <span className="tp-nav-icon">{LIVING.icon}</span>
+            <span>{LIVING.label}</span>
+          </Link>
         </nav>
 
         {/* 메뉴바 하단: 유저 + 설정 */}

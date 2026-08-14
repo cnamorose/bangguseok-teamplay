@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { readSse } from "@/lib/sse-client";
 import { KINDS, guessKind } from "@/lib/agents/essay/kinds";
 import { inspectAiTells } from "@/lib/agents/essay/ai-tells";
+import ShareButton from "@/app/components/ShareButton";
 
 interface ExpItem {
   id: string;
@@ -379,6 +380,7 @@ export default function ResumeRoom() {
                   <button className="tp-btn" onClick={() => saveEdited(e.id)}>
                     {saveState === "saving" ? "저장 중..." : saveState === "saved" ? "저장됨!" : "💾 저장"}
                   </button>
+                  <ShareButton kind="essay" targetId={e.id} />
                   <span className="tp-chars">
                     {Array.from(draftText).length}자{e.maxChars ? ` / ${e.maxChars}` : ""}
                   </span>

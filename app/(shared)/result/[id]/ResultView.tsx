@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseSource } from "@/lib/parse-source";
 import { extractArticleText } from "@/lib/result-text";
+import ShareButton from "@/app/components/ShareButton";
 
 interface AgentLog {
   id: string;
@@ -99,6 +100,7 @@ export default function ResultView({ id }: { id: string }) {
           >
             🧑‍⚖️ 평가단에게 평가받기
           </button>
+          <ShareButton kind="result" targetId={id} />
           <button className="tp-btn-outline" onClick={() => router.push("/study/bookshelf")}>
             📚 책장으로
           </button>

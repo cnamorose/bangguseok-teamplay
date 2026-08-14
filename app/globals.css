@@ -516,6 +516,75 @@ body {
 
 .tp-chars { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+/* ══════════ 거실: 공유와 댓글 ══════════ */
+
+/* 공유 화면은 로그인 없이도 열리므로 방 껍데기 밖에 있다 */
+.tp-share-page {
+  min-height: 100vh;
+  background: var(--wall);
+  padding: clamp(20px, 5vw, 48px) clamp(14px, 4vw, 32px);
+}
+.tp-share-view {
+  max-width: 760px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.tp-share-doc {
+  padding: clamp(24px, 5vw, 40px);
+  background: var(--ivory);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+}
+.tp-share-eyebrow {
+  margin: 0 0 6px; font-size: 12px; font-weight: 800;
+  letter-spacing: .04em; color: var(--text-muted);
+}
+.tp-share-title { margin: 0; font-size: clamp(20px, 3.6vw, 27px); font-weight: 900; letter-spacing: -.5px; }
+.tp-share-title span { font-weight: 700; color: var(--text-muted); }
+.tp-share-prompt {
+  margin: 10px 0 0; padding: 10px 14px;
+  font-size: 14px; font-weight: 700;
+  background: var(--cream); border-left: 3px solid var(--sage);
+}
+.tp-share-meta { margin: 8px 0 0; font-size: 12px; color: var(--text-muted); }
+.tp-share-body {
+  margin-top: 18px; padding-top: 18px;
+  border-top: 2px solid var(--ink);
+  font-size: 15px; line-height: 1.95; white-space: pre-wrap;
+}
+.tp-share-owner {
+  margin: 18px 0 0; font-size: 12px; color: var(--text-muted); text-align: right;
+}
+
+.tp-share-comments {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 22px 24px;
+  background: var(--paper);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+}
+.tp-comment { padding-bottom: 12px; border-bottom: 2px dotted var(--ink); }
+.tp-comment:last-of-type { border-bottom: none; }
+.tp-comment-top { display: flex; align-items: baseline; gap: 8px; font-size: 12px; }
+.tp-comment-top strong { font-size: 13px; }
+.tp-comment-top span { color: var(--text-muted); }
+.tp-comment-del {
+  margin-left: auto; background: none; border: none; cursor: pointer;
+  font-size: 11px; color: var(--text-muted); text-decoration: underline;
+}
+.tp-comment-body { margin: 4px 0 0; font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+
+/* 공유 만들기 상자 */
+.tp-share-box {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 16px 18px;
+  background: var(--cream);
+  border: 2px dashed var(--ink);
+  border-radius: var(--radius);
+}
+.tp-share-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
 /* ── 면접 ── */
 .tp-iv-top {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -604,6 +673,18 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .tp-progress-indet { animation: none; width: 100% !important; opacity: .5; }
+}
+
+/* 거실 — 방 메뉴가 아니라 방 밖이라는 걸 선으로 구분한다 */
+.tp-nav-shared {
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 2px dashed rgba(253, 246, 236, 0.28);
+  border-radius: 0;
+}
+.tp-nav-shared[aria-current="page"] {
+  border-radius: var(--radius);
+  border-top-color: var(--ink);
 }
 
 /* ── 방 이동 토글 (메뉴바 상단) ── */

@@ -50,6 +50,9 @@ export const MODES: Record<ModeId, Mode> = {
 
 export const DEFAULT_MODE: ModeId = "study";
 
+/** 방 밖에 있는 공용 공간. 두 방 어디서든 같은 곳으로 간다 */
+export const LIVING = { href: "/living", icon: "🛋️", label: "거실" };
+
 export const MODE_LIST: Mode[] = [MODES.study, MODES.career];
 
 /** 알 수 없는 값(옛 데이터·손댄 요청)이 들어와도 안전하게 방 id로 만든다 */
@@ -57,12 +60,17 @@ export function toModeId(value: unknown): ModeId {
   return value === "career" || value === "study" ? value : DEFAULT_MODE;
 }
 
+/** 어느 방에도 속하지 않는, 두 방이 함께 쓰는 화면 */
+export const SHARED_PATHS = ["/living"];
+
 /**
- * 지금 URL이 어느 방인지.
- * /result, /clipboard처럼 두 방이 같이 쓰는 화면은 공부방으로 친다.
- * (지금은 공부방 결과물에서만 열리므로. 취업방에서도 열게 되면 그때 판별 기준을 넓힌다)
+ * 지금 URL이 어느 방인지. 방 밖(거실)이면 null.
+ *
+ * null이면 호출한 쪽이 마지막에 있던 방(User.mode)으로 메뉴를 유지한다.
+ * 그래야 취업방에서 거실에 들렀다 나올 때 메뉴가 공부방으로 뒤집히지 않는다.
  */
-export function modeFromPath(pathname: string): ModeId {
+export function modeFromPath(pathname: string): ModeId | null {
+  if (SHARED_PATHS.some((p) => pathname.startsWith(p))) return null;
   return pathname.startsWith("/career") ? "career" : "study";
 }
 
