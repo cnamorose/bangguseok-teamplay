@@ -61,8 +61,8 @@ export default function ApplicationView({ id }: { id: string }) {
     load();
   };
 
-  if (loading) return <p className="tp-note">불러오는 중...</p>;
-  if (error) return <p className="tp-note tp-note-error">{error}</p>;
+  if (loading) return <p className="ui-note">불러오는 중…</p>;
+  if (error) return <p className="ui-note is-err">{error}</p>;
   if (!app) return null;
 
   const a = app.company.analysis;
@@ -71,159 +71,186 @@ export default function ApplicationView({ id }: { id: string }) {
   const written = app.essays.filter((e) => e.charCount > 0).length;
 
   return (
-    <div className="tp-career-col">
+    <>
       {/* 머리 */}
-      <div className="tp-hero">
-        <div className="tp-hero-top">
-          <h1 className="tp-hero-name">
-            {app.company.name} <span style={{ fontWeight: 700 }}>· {app.role}</span>
+      <div className="ui-hero">
+        <div className="ui-hero-top">
+          <h1>
+            {app.company.name} · {app.role}
           </h1>
-          {dday && <span className={`tp-dday${urgent ? " is-urgent" : ""}`}>{dday}</span>}
+          {dday && (
+            <span className={`ui-badge ${urgent ? "is-fail is-urgent" : "is-mute"}`}>{dday}</span>
+          )}
+          <button
+            className="ui-btn ui-btn-ghost"
+            style={{ marginLeft: "auto" }}
+            onClick={() => router.push("/career/desk")}
+          >
+            🗂️ 책상으로
+          </button>
         </div>
 
-        <div className="tp-desk-controls">
-          <label className="tp-inline-field">
+        <div className="ui-actions">
+          <label className="ui-field" style={{ flexDirection: "row", alignItems: "center" }}>
             <span>마감</span>
             <input
-              className="tp-input"
+              className="ui-input"
+              style={{ width: "auto" }}
               type="date"
               value={app.deadline ? app.deadline.slice(0, 10) : ""}
               onChange={(e) => patch({ deadline: e.target.value })}
             />
           </label>
 
-          <div className="tp-choices">
-            {STATUSES.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                className="tp-chip"
-                aria-pressed={app.status === s.id}
-                onClick={() => patch({ status: s.id })}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
+          {STATUSES.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              className="ui-chip"
+              aria-pressed={app.status === s.id}
+              onClick={() => patch({ status: s.id })}
+            >
+              {s.label}
+            </button>
+          ))}
 
           <button
-            className={`tp-btn-sm${app.pinned ? "" : " tp-btn-outline"}`}
+            type="button"
+            className="ui-chip"
+            aria-pressed={app.pinned}
             onClick={() => patch({ pinned: !app.pinned })}
           >
             📌 {app.pinned ? "고정됨" : "고정하기"}
           </button>
         </div>
-
-        <div className="tp-hero-actions">
-          <button className="tp-btn-outline" onClick={() => router.push("/career/desk")}>
-            🗂️ 책상으로
-          </button>
-        </div>
       </div>
 
       {/* 기업 분석 */}
-      <div className="tp-blk">
-        <h2 className="tp-blk-head">🏢 기업 분석</h2>
-        {a ? (
-          <>
-            <p className="tp-blk-body">
-              이 회사는 지금 <strong>{a.headline.cause}</strong> 때문에{" "}
-              <strong>{a.headline.direction}</strong>을 강화하고 있다.
-            </p>
-            {a.headline.keywords?.length > 0 && (
-              <div className="tp-choices">
-                {a.headline.keywords.map((k, i) => (
-                  <span key={i} className="tp-role-chip">{k}</span>
-                ))}
-              </div>
-            )}
-            <p className="tp-exp-sub">
-              {app.company.analyzedAt &&
-                `${new Date(app.company.analyzedAt).toLocaleDateString("ko-KR")} 기준`}
-            </p>
-          </>
-        ) : (
-          <p className="tp-blk-body">아직 분석 전이에요.</p>
-        )}
-        <div className="tp-choices">
-          <button
-            className="tp-btn-sm"
-            onClick={() => router.push(`/career/companies/${app.company.id}`)}
-          >
-            자세히 보기
-          </button>
+      <section className="ui-sec">
+        <div className="ui-sec-head">
+          <h2>🏢 기업 분석</h2>
+          {app.company.analyzedAt && (
+            <p>{new Date(app.company.analyzedAt).toLocaleDateString("ko-KR")} 기준</p>
+          )}
         </div>
-      </div>
+
+        <div className="ui-panel ui-form">
+          {a ? (
+            <>
+              <p className="ui-judge-body">
+                이 회사는 지금 <strong>{a.headline.cause}</strong> 때문에{" "}
+                <strong>{a.headline.direction}</strong>을 강화하고 있다.
+              </p>
+              {a.headline.keywords?.length > 0 && (
+                <div className="ui-actions">
+                  {a.headline.keywords.map((k, i) => (
+                    <span key={i} className="ui-chip">
+                      {k}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="ui-judge-body">아직 분석 전이에요.</p>
+          )}
+
+          <div className="ui-actions is-end">
+            <button
+              className="ui-btn ui-btn-ghost"
+              onClick={() => router.push(`/career/companies/${app.company.id}`)}
+            >
+              자세히 보기
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* 직무 분석 */}
-      <div className="tp-blk">
-        <h2 className="tp-blk-head">🧭 {app.role} 직무</h2>
-        {app.roleAnalysis ? (
-          <>
-            <p className="tp-blk-body">{app.roleAnalysis.linkToStrategy}</p>
-            {app.roleAnalysis.requirements?.length > 0 && (
-              <ul className="tp-check">
-                {app.roleAnalysis.requirements.map((r, i) => (
-                  <li key={i}>☑ {r}</li>
-                ))}
-              </ul>
-            )}
-          </>
-        ) : (
-          <p className="tp-blk-body">
-            아직 직무 분석이 없어요. 기업 분석에서 직무를 넣고 돌리면 여기 붙어요.
-          </p>
-        )}
-      </div>
+      <section className="ui-sec">
+        <div className="ui-sec-head">
+          <h2>🧭 {app.role} 직무</h2>
+        </div>
+
+        <div className="ui-panel ui-form">
+          {app.roleAnalysis ? (
+            <>
+              <p className="ui-judge-body">{app.roleAnalysis.linkToStrategy}</p>
+              {app.roleAnalysis.requirements?.length > 0 && (
+                <ul className="ui-check">
+                  {app.roleAnalysis.requirements.map((r, i) => (
+                    <li key={i}>☑ {r}</li>
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : (
+            <p className="ui-judge-body">
+              아직 직무 분석이 없어요. 지원 건을 만들 때 공고를 넣으면 여기 붙어요.
+            </p>
+          )}
+        </div>
+      </section>
 
       {/* 자소서 */}
-      <div className="tp-blk is-star">
-        <h2 className="tp-blk-head">
-          📝 자소서 {app.essays.length > 0 && `— ${written}/${app.essays.length}문항`}
-        </h2>
-
-        {app.essays.length === 0 ? (
-          <p className="tp-blk-body">아직 문항이 없어요.</p>
-        ) : (
-          app.essays.map((e) => (
-            <div key={e.id} className="tp-essay-item">
-              <div className="tp-essay-row">
-                <div>
-                  <strong>{e.prompt}</strong>
-                  <p className="tp-exp-sub">
-                    {KINDS.find((k) => k.id === e.kind)?.label} · {e.charCount}자
-                    {e.maxChars ? ` / ${e.maxChars}` : ""}
-                    {e.maxChars && e.charCount > e.maxChars && (
-                      <span className="tp-over"> · 제한 초과</span>
-                    )}
-                  </p>
-                </div>
-                <button
-                  className="tp-btn-sm"
-                  onClick={() => setOpenEssay(openEssay === e.id ? null : e.id)}
-                >
-                  {openEssay === e.id ? "접기" : "펼치기"}
-                </button>
-              </div>
-              {openEssay === e.id && <div className="tp-essay-body">{e.content}</div>}
-            </div>
-          ))
-        )}
-
-        <div className="tp-choices">
-          <button className="tp-btn" onClick={() => router.push("/career/resume")}>
+      <section className="ui-sec">
+        <div className="ui-sec-head">
+          <h2>📝 자소서</h2>
+          {app.essays.length > 0 && (
+            <p>
+              {written}/{app.essays.length}문항
+            </p>
+          )}
+          <button className="ui-more" onClick={() => router.push("/career/resume")}>
             ✍️ 자소서 쓰러 가기
           </button>
         </div>
-      </div>
+
+        {app.essays.length === 0 ? (
+          <div className="ui-empty">
+            <h3>아직 문항이 없어요</h3>
+            <p>자소서 작성에서 문항을 넣고 초안을 뽑으면 여기 모여요.</p>
+          </div>
+        ) : (
+          <div className="ui-form">
+            {app.essays.map((e) => (
+              <div className="ui-panel ui-form" key={e.id} style={{ gap: 12 }}>
+                <div className="ui-actions">
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3>{e.prompt}</h3>
+                    <p className="ui-hint">
+                      {KINDS.find((k) => k.id === e.kind)?.label} · {e.charCount}자
+                      {e.maxChars ? ` / ${e.maxChars}` : ""}
+                      {e.maxChars && e.charCount > e.maxChars && (
+                        <strong style={{ color: "var(--danger)" }}> · 제한 초과</strong>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    className="ui-btn ui-btn-ghost"
+                    onClick={() => setOpenEssay(openEssay === e.id ? null : e.id)}
+                  >
+                    {openEssay === e.id ? "접기" : "펼치기"}
+                  </button>
+                </div>
+                {openEssay === e.id && <p className="ui-doc-body">{e.content}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* 내 메모 (회사 단위라 읽기만) */}
       {app.company.notes && (
-        <div className="tp-blk is-note">
-          <h2 className="tp-blk-head">📝 {app.company.name} 메모</h2>
-          <p className="tp-blk-body" style={{ whiteSpace: "pre-wrap" }}>{app.company.notes}</p>
-        </div>
+        <section className="ui-sec">
+          <div className="ui-sec-head">
+            <h2>📝 {app.company.name} 메모</h2>
+          </div>
+          <div className="ui-panel">
+            <p className="ui-judge-body">{app.company.notes}</p>
+          </div>
+        </section>
       )}
-    </div>
+    </>
   );
 }

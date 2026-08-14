@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import ColorTab from "@/app/components/ColorTab";
 import { ddayLabel, isUrgent, statusLabel } from "./status";
 
 interface AppRow {
@@ -10,6 +11,8 @@ interface AppRow {
   deadline: string | null;
   status: string;
   pinned: boolean;
+  /** 인덱스 탭 색 ("book-3") · null이면 id에서 뽑는다 */
+  color: string | null;
   analyzedAt: string | null; // 직무 분석
   company: { id: string; name: string; analyzedAt: string | null };
   essays: { id: string; charCount: number }[];
@@ -89,16 +92,26 @@ export default function Desk() {
     load();
   };
 
-  if (loading) return <p className="tp-note">책상을 정리하는 중...</p>;
+  /** 인덱스 탭 색 바꾸기 — 화면을 먼저 바꾸고 서버에 알린다 */
+  const setColor = (id: string, color: string | null) => {
+    setApps((prev) => prev.map((a) => (a.id === id ? { ...a, color } : a)));
+    fetch(`/api/career/applications/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ color }),
+    }).catch(() => {});
+  };
+
+  if (loading) return <p className="ui-note">책상을 정리하는 중…</p>;
 
   if (creating) {
     return (
-      <div className="tp-progress-wrap">
-        <p className="tp-progress-msg">
-          {posting.trim() ? "📄 채용공고를 읽는 중..." : "🔎 이 직무를 알아보는 중..."}
+      <div className="ui-run">
+        <p className="ui-run-msg">
+          {posting.trim() ? "📄 채용공고를 읽는 중…" : "🔎 이 직무를 알아보는 중…"}
         </p>
-        <div className="tp-progress-bar">
-          <div className="tp-progress-fill tp-progress-indet" />
+        <div className="ui-progress">
+          <span className="ui-progress-fill is-indet" />
         </div>
       </div>
     );
@@ -107,30 +120,35 @@ export default function Desk() {
   // 분석해 둔 회사가 없으면 거기부터
   if (companies.length === 0) {
     return (
-      <div className="tp-shelf-empty">
-        <div style={{ fontSize: 34, marginBottom: 8 }}>🏢</div>
-        <strong>먼저 회사를 분석해주세요</strong>
-        <br />
-        회사를 알아야 그 회사 공고를 제대로 읽을 수 있어요.
-        <br />
-        <button
-          className="tp-btn"
-          style={{ marginTop: 16 }}
-          onClick={() => router.push("/career/companies")}
-        >
-          🏢 기업 분석하러 가기
-        </button>
-      </div>
+      <>
+        <header className="ui-head">
+          <h1>책상</h1>
+          <p>지원하는 회사와 직무를 여기 올려두고 챙겨요.</p>
+        </header>
+
+        <div className="ui-empty">
+          <div style={{ fontSize: 34 }}>🏢</div>
+          <h3>먼저 회사를 분석해주세요</h3>
+          <p>회사를 알아야 그 회사 공고를 제대로 읽을 수 있어요.</p>
+          <button className="ui-btn" onClick={() => router.push("/career/companies")}>
+            🏢 기업 분석하러 가기
+          </button>
+        </div>
+      </>
     );
   }
 
   const addPanel = (
-    <div className="tp-panel">
-      <p className="tp-col-title">📄 지원 건 추가</p>
+    <div className="ui-panel ui-form">
+      <h3>📄 지원 건 추가</h3>
 
-      <label className="tp-field">
-        <span className="tp-label">회사</span>
-        <select className="tp-input" value={companyId} onChange={(e) => setCompanyId(e.target.value)}>
+      <label className="ui-field is-narrow">
+        <span>회사</span>
+        <select
+          className="ui-input"
+          value={companyId}
+          onChange={(e) => setCompanyId(e.target.value)}
+        >
           {companies.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -140,115 +158,129 @@ export default function Desk() {
         </select>
       </label>
 
-      <label className="tp-field">
-        <span className="tp-label">
-          채용공고 <span className="tp-optional">(붙여넣기 · 있으면 훨씬 정확해요)</span>
+      <label className="ui-field">
+        <span>
+          채용공고 <em>(붙여넣기 · 있으면 훨씬 정확해요)</em>
         </span>
         <textarea
-          className="tp-textarea"
+          className="ui-textarea is-tall"
           rows={7}
           value={posting}
           onChange={(e) => setPosting(e.target.value)}
-          placeholder={"공고 페이지를 통째로 복사해서 붙여넣으세요.\n담당업무 · 자격요건 · 우대사항 · 마감일이 다 들어 있으면 좋아요."}
-          style={{ width: "100%", boxSizing: "border-box" }}
+          placeholder={
+            "공고 페이지를 통째로 복사해서 붙여넣으세요.\n담당업무 · 자격요건 · 우대사항 · 마감일이 다 들어 있으면 좋아요."
+          }
         />
-        <span className="tp-sub-desc" style={{ margin: 0 }}>
-          공고가 있으면 직무명과 <strong>마감일까지 알아서 잡아요.</strong> 자격요건도 추측하지 않고 원문 그대로 씁니다.
-        </span>
+        <p className="ui-hint">
+          공고가 있으면 직무명과 <strong>마감일까지 알아서 잡아요.</strong> 자격요건도 추측하지
+          않고 원문 그대로 씁니다.
+        </p>
       </label>
 
-      <label className="tp-field">
-        <span className="tp-label">
-          직무명 <span className="tp-optional">{posting.trim() ? "(공고에서 찾으면 그걸 씁니다)" : "(공고가 없으면 필수)"}</span>
+      <label className="ui-field is-narrow">
+        <span>
+          직무명{" "}
+          <em>{posting.trim() ? "(공고에서 찾으면 그걸 씁니다)" : "(공고가 없으면 필수)"}</em>
         </span>
         <input
-          className="tp-input"
+          className="ui-input"
           value={role}
           onChange={(e) => setRole(e.target.value)}
           placeholder="예: 백엔드 개발"
         />
       </label>
 
-      {error && <p className="tp-error">{error}</p>}
+      {error && <p className="ui-note is-err">{error}</p>}
 
-      <div className="tp-choices">
+      <div className="ui-actions is-end">
+        {apps.length > 0 && (
+          <button className="ui-btn ui-btn-ghost" onClick={() => setAdding(false)}>
+            그만두기
+          </button>
+        )}
         <button
-          className="tp-btn"
+          className="ui-btn"
           onClick={create}
           disabled={!companyId || (!role.trim() && !posting.trim())}
         >
           📄 공고 분석하고 추가
         </button>
-        {apps.length > 0 && (
-          <button className="tp-btn-outline" onClick={() => setAdding(false)}>그만두기</button>
-        )}
       </div>
     </div>
   );
 
   if (apps.length === 0 || adding) {
     return (
-      <div className="tp-career-col">
-        {apps.length === 0 && (
-          <p className="tp-sub-desc" style={{ margin: 0 }}>
-            아직 지원 건이 없어요. 공고를 붙여넣으면 마감일까지 자동으로 잡힙니다.
+      <>
+        <header className="ui-head">
+          <h1>책상</h1>
+          <p>
+            {apps.length === 0
+              ? "아직 지원 건이 없어요. 공고를 붙여넣으면 마감일까지 자동으로 잡힙니다."
+              : "지원하는 회사와 직무를 여기 올려두고 챙겨요."}
           </p>
-        )}
+        </header>
         {addPanel}
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="tp-career-col">
-      <div className="tp-shelf-bar">
-        <p className="tp-sub-desc" style={{ margin: 0 }}>
-          마감이 가까운 순으로 놓여 있어요. 급한 건 📌로 고정할 수 있습니다.
-        </p>
-        <button className="tp-btn-sm" style={{ marginLeft: "auto" }} onClick={() => setAdding(true)}>
+    <>
+      <header className="ui-head is-row">
+        <div>
+          <h1>책상</h1>
+          <p>마감이 가까운 순으로 놓여 있어요. 급한 건 📌로 고정할 수 있습니다.</p>
+        </div>
+        <button className="ui-btn" onClick={() => setAdding(true)}>
           + 지원 건 추가
         </button>
-      </div>
+      </header>
 
-      {error && <p className="tp-note tp-note-error">{error}</p>}
+      {error && <p className="ui-note is-err">{error}</p>}
 
-      <div className="tp-desk-grid">
+      <div className="ui-grid">
         {apps.map((a) => {
           const dday = ddayLabel(a.deadline);
           const urgent = isUrgent(a.deadline, a.status);
           const written = a.essays.filter((e) => e.charCount > 0).length;
 
           return (
-            <button
+            <div
               key={a.id}
-              type="button"
-              className={`tp-desk-card${urgent ? " is-urgent" : ""}`}
+              className={`ui-panel is-click${urgent ? " is-urgent" : ""}`}
+              role="button"
+              tabIndex={0}
               onClick={() => router.push(`/career/desk/${a.id}`)}
+              onKeyDown={(e) => e.key === "Enter" && router.push(`/career/desk/${a.id}`)}
             >
-              <div className="tp-desk-top">
-                <h3 className="tp-desk-name">
-                  {a.company.name} <span>· {a.role}</span>
-                </h3>
-                <span
-                  className={`tp-pin${a.pinned ? " is-on" : ""}`}
-                  onClick={(e) => togglePin(e, a)}
-                  role="button"
-                  tabIndex={0}
-                  aria-label="고정"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") togglePin(e as unknown as React.MouseEvent, a);
-                  }}
-                >
-                  📌
-                </span>
+              <ColorTab id={a.id} color={a.color} onPick={(c) => setColor(a.id, c)} />
+
+              <h3>
+                {a.company.name} · {a.role}
+              </h3>
+
+              <button
+                type="button"
+                className={`ui-pin${a.pinned ? " is-on" : ""}`}
+                onClick={(e) => togglePin(e, a)}
+                aria-pressed={a.pinned}
+                aria-label={a.pinned ? "고정 풀기" : "고정하기"}
+                title={a.pinned ? "고정 풀기" : "고정하기"}
+              >
+                📌
+              </button>
+
+              <div className="ui-actions" style={{ margin: "2px 0 6px" }}>
+                {dday && (
+                  <span className={`ui-badge ${urgent ? "is-fail is-urgent" : "is-mute"}`}>
+                    {dday}
+                  </span>
+                )}
+                <span className="ui-badge is-mute">{statusLabel(a.status)}</span>
               </div>
 
-              <div className="tp-desk-meta">
-                {dday && <span className={`tp-dday${urgent ? " is-urgent" : ""}`}>{dday}</span>}
-                <span className={`tp-status is-${a.status}`}>{statusLabel(a.status)}</span>
-              </div>
-
-              <ul className="tp-desk-steps">
+              <ul className="ui-check">
                 <li className={a.company.analyzedAt ? "is-done" : ""}>
                   {a.company.analyzedAt ? "✓" : "○"} 기업 분석
                 </li>
@@ -260,10 +292,10 @@ export default function Desk() {
                   {a.essays.length > 0 ? `${written}/${a.essays.length}문항` : "—"}
                 </li>
               </ul>
-            </button>
+            </div>
           );
         })}
       </div>
-    </div>
+    </>
   );
 }

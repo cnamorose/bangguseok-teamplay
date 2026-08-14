@@ -11,11 +11,10 @@ export default function ComingSoon({
   desc: string;
 }) {
   return (
-    <div className="tp-shelf-empty">
-      <div style={{ fontSize: 34, marginBottom: 8 }}>{emoji}</div>
-      <strong>{title}</strong>
-      <br />
-      {desc}
+    <div className="ui-empty">
+      <div style={{ fontSize: 34 }}>{emoji}</div>
+      <h3>{title}</h3>
+      <p>{desc}</p>
     </div>
   );
 }

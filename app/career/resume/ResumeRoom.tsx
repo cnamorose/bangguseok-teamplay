@@ -201,17 +201,17 @@ export default function ResumeRoom() {
     load(appId);
   };
 
-  if (loading) return <p className="tp-note">불러오는 중...</p>;
+  if (loading) return <p className="ui-note">불러오는 중…</p>;
 
   if (exps.length === 0) {
     return (
-      <div className="tp-shelf-empty">
-        <div style={{ fontSize: 34, marginBottom: 8 }}>🧰</div>
-        <strong>경험을 먼저 정리해주세요!</strong>
-        <br />
-        자소서는 내 경험에서 나와요. 경험이 없으면 어느 회사에나 낼 수 있는 뻔한 글이 됩니다.
-        <br />
-        <button className="tp-btn" style={{ marginTop: 16 }} onClick={() => router.push("/career/experience")}>
+      <div className="ui-empty">
+        <div style={{ fontSize: 34 }}>🧰</div>
+        <h3>경험을 먼저 정리해주세요</h3>
+        <p>
+          자소서는 내 경험에서 나와요. 경험이 없으면 어느 회사에나 낼 수 있는 뻔한 글이 됩니다.
+        </p>
+        <button className="ui-btn" onClick={() => router.push("/career/experience")}>
           🧰 내 경험 정리하러 가기
         </button>
       </div>
@@ -220,13 +220,11 @@ export default function ResumeRoom() {
 
   if (apps.length === 0) {
     return (
-      <div className="tp-shelf-empty">
-        <div style={{ fontSize: 34, marginBottom: 8 }}>📄</div>
-        <strong>먼저 지원 건을 만들어주세요</strong>
-        <br />
-        책상에서 회사와 채용공고를 넣으면 여기에 나타나요.
-        <br />
-        <button className="tp-btn" style={{ marginTop: 16 }} onClick={() => router.push("/career/desk")}>
+      <div className="ui-empty">
+        <div style={{ fontSize: 34 }}>📄</div>
+        <h3>먼저 지원 건을 만들어주세요</h3>
+        <p>책상에서 회사와 채용공고를 넣으면 여기에 나타나요.</p>
+        <button className="ui-btn" onClick={() => router.push("/career/desk")}>
           🗂️ 책상으로 가기
         </button>
       </div>
@@ -235,10 +233,10 @@ export default function ResumeRoom() {
 
   if (runningId) {
     return (
-      <div className="tp-progress-wrap">
-        <p className="tp-progress-msg">{progress}</p>
-        <div className="tp-progress-bar">
-          <div className="tp-progress-fill tp-progress-indet" />
+      <div className="ui-run">
+        <p className="ui-run-msg">{progress}</p>
+        <div className="ui-progress">
+          <span className="ui-progress-fill is-indet" />
         </div>
       </div>
     );
@@ -248,12 +246,21 @@ export default function ResumeRoom() {
   const written = essays.filter((e) => e.charCount > 0).length;
 
   return (
-    <div className="tp-career-col">
+    <>
+      <header className="ui-head">
+        <h1>자소서 작성</h1>
+        <p>
+          {essays.length > 0
+            ? `문항 ${essays.length}개 중 ${written}개 작성됨`
+            : "공고의 문항을 옮겨 적고, 쓸 경험을 골라 초안을 뽑아요."}
+        </p>
+      </header>
+
       {/* 지원 건 */}
-      <div className="tp-panel">
-        <label className="tp-field">
-          <span className="tp-label">어디에 낼 자소서인가요?</span>
-          <select className="tp-input" value={appId} onChange={(e) => setAppId(e.target.value)}>
+      <div className="ui-panel ui-form">
+        <label className="ui-field">
+          <span>어디에 낼 자소서인가요?</span>
+          <select className="ui-input" value={appId} onChange={(e) => setAppId(e.target.value)}>
             {apps.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.company.name} · {a.role} (문항 {a._count.essays}개)
@@ -261,53 +268,53 @@ export default function ResumeRoom() {
             ))}
           </select>
           {current && !current.company.analysis && (
-            <span className="tp-sub-desc" style={{ margin: 0 }}>
+            <p className="ui-hint">
               ⚠ 이 회사는 아직 기업 분석이 없어요. 분석해두면 회사에 맞는 문장이 나옵니다.
-            </span>
+            </p>
           )}
         </label>
       </div>
 
       {/* 문항 목록 */}
-      {essays.length > 0 && (
-        <p className="tp-sub-desc" style={{ margin: 0 }}>
-          문항 {essays.length}개 중 {written}개 작성됨
-        </p>
-      )}
-
       {essays.map((e, i) => {
         const picked = picks[e.id] ?? [];
         const isOpen = openId === e.id;
 
         return (
-          <div className="tp-panel" key={e.id}>
-            <div className="tp-q-head">
-              <span className="tp-q-num">{i + 1}</span>
-              <div className="tp-q-title">
-                <strong>{e.prompt}</strong>
-                <p className="tp-exp-sub">
+          <div className="ui-panel ui-form" key={e.id}>
+            <div className="ui-actions">
+              <span className="ui-step-n">{i + 1}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3>{e.prompt}</h3>
+                <p className="ui-hint">
                   {kindLabel(e.kind)}
                   {e.maxChars ? ` · ${e.maxChars}자 이내` : ""}
                   {e.charCount > 0 && ` · 작성됨 ${e.charCount}자`}
-                  {e.maxChars && e.charCount > e.maxChars && <span className="tp-over"> · 초과</span>}
+                  {e.maxChars && e.charCount > e.maxChars && (
+                    <strong style={{ color: "var(--danger)" }}> · 초과</strong>
+                  )}
                 </p>
               </div>
-              <button className="tp-btn-sm tp-btn-outline" onClick={() => removeQuestion(e.id)}>
+              <button
+                className="ui-btn ui-btn-ghost"
+                onClick={() => removeQuestion(e.id)}
+                aria-label="문항 지우기"
+              >
                 🗑️
               </button>
             </div>
 
             {/* 이 문항에 쓸 경험 */}
-            <div className="tp-field">
-              <span className="tp-label">
-                쓸 경험 <span className="tp-optional">(최대 3개 · 한 문항엔 1~2개가 좋아요)</span>
+            <div className="ui-field">
+              <span>
+                쓸 경험 <em>(최대 3개 · 한 문항엔 1~2개가 좋아요)</em>
               </span>
-              <div className="tp-exp-pick">
+              <div className="ui-picks">
                 {exps.map((x) => (
                   <button
                     key={x.id}
                     type="button"
-                    className="tp-pick"
+                    className="ui-pick"
                     aria-pressed={picked.includes(x.id)}
                     onClick={() => togglePick(e.id, x.id)}
                   >
@@ -321,15 +328,18 @@ export default function ResumeRoom() {
                 ))}
               </div>
               {picked.some((id) => overused.has(id)) && (
-                <span className="tp-sub-desc" style={{ margin: 0 }}>
-                  ⚠ 다른 문항에도 쓰는 경험이 있어요. 같은 얘기가 반복되면 읽는 사람이 금방 알아챕니다.
-                </span>
+                <p className="ui-hint">
+                  ⚠ 다른 문항에도 쓰는 경험이 있어요. 같은 얘기가 반복되면 읽는 사람이 금방
+                  알아챕니다.
+                </p>
               )}
             </div>
 
-            <div className="tp-field">
-              <span className="tp-label">톤 <span className="tp-optional">(선택)</span></span>
-              <div className="tp-choices">
+            <div className="ui-field">
+              <span>
+                톤 <em>(선택)</em>
+              </span>
+              <div className="ui-actions">
                 {[
                   { v: "", l: "기본" },
                   { v: "result", l: "결과 중심" },
@@ -339,7 +349,7 @@ export default function ResumeRoom() {
                   <button
                     key={t.v}
                     type="button"
-                    className="tp-chip"
+                    className="ui-chip"
                     aria-pressed={(tone[e.id] ?? "") === t.v}
                     onClick={() => setTone((p) => ({ ...p, [e.id]: t.v }))}
                   >
@@ -349,13 +359,10 @@ export default function ResumeRoom() {
               </div>
             </div>
 
-            <div className="tp-choices">
-              <button className="tp-btn" onClick={() => draft(e)} disabled={picked.length === 0}>
-                {e.charCount > 0 ? "🔄 다시 뽑기" : "✍️ 초안 뽑기"}
-              </button>
+            <div className="ui-actions is-end">
               {e.charCount > 0 && (
                 <button
-                  className="tp-btn-outline"
+                  className="ui-btn ui-btn-ghost"
                   onClick={() => {
                     setOpenId(isOpen ? null : e.id);
                     setDraftText(e.content);
@@ -364,62 +371,80 @@ export default function ResumeRoom() {
                   {isOpen ? "접기" : "열어서 고치기"}
                 </button>
               )}
+              <button className="ui-btn" onClick={() => draft(e)} disabled={picked.length === 0}>
+                {e.charCount > 0 ? "🔄 다시 뽑기" : "✍️ 초안 뽑기"}
+              </button>
             </div>
 
             {/* 편집 */}
             {isOpen && (
               <>
                 <textarea
-                  className="tp-textarea"
+                  className="ui-textarea is-tall"
                   rows={12}
                   value={draftText}
                   onChange={(ev) => setDraftText(ev.target.value)}
-                  style={{ width: "100%", boxSizing: "border-box" }}
                 />
-                <div className="tp-edit-head">
-                  <button className="tp-btn" onClick={() => saveEdited(e.id)}>
-                    {saveState === "saving" ? "저장 중..." : saveState === "saved" ? "저장됨!" : "💾 저장"}
-                  </button>
-                  <ShareButton kind="essay" targetId={e.id} />
-                  <span className="tp-chars">
+
+                <div className="ui-actions">
+                  <span className="ui-count">
                     {Array.from(draftText).length}자{e.maxChars ? ` / ${e.maxChars}` : ""}
                   </span>
+                  <ShareButton kind="essay" targetId={e.id} />
+                  <button
+                    className="ui-btn"
+                    style={{ marginLeft: "auto" }}
+                    onClick={() => saveEdited(e.id)}
+                  >
+                    {saveState === "saving"
+                      ? "저장 중…"
+                      : saveState === "saved"
+                      ? "저장됨!"
+                      : "💾 저장"}
+                  </button>
                 </div>
 
-                <div className="tp-tells">
-                  <p className="tp-sub-title">
-                    {tells.length === 0 ? "✅ AI 자국이 안 보여요" : `🔎 아직 남은 곳 ${tells.length}군데`}
-                  </p>
+                <div className="ui-tells">
+                  <h3>
+                    {tells.length === 0
+                      ? "✅ AI 자국이 안 보여요"
+                      : `🔎 아직 남은 곳 ${tells.length}군데`}
+                  </h3>
+
                   {tells.length === 0 ? (
-                    <p className="tp-sub-desc" style={{ margin: 0 }}>
+                    <p className="ui-hint">
                       뽑으면서 한 번 다듬었어요. 그래도{" "}
-                      <strong>첫 문장과 마지막 문장은 직접 손보는 걸</strong> 권해요 — 제일 눈길이 머무는 자리예요.
+                      <strong>첫 문장과 마지막 문장은 직접 손보는 걸</strong> 권해요 — 제일 눈길이
+                      머무는 자리예요.
                     </p>
                   ) : (
                     tells.map((t, k) => (
-                      <div className={`tp-tell is-${t.severity}`} key={k}>
-                        <p className="tp-tell-head">
-                          <span className="tp-tell-tag">{t.severity === "high" ? "고침 권장" : "살펴보기"}</span>
+                      <div className={`ui-tell is-${t.severity}`} key={k}>
+                        <p className="ui-tell-head">
+                          <span className="ui-tell-tag">
+                            {t.severity === "high" ? "고침 권장" : "살펴보기"}
+                          </span>
                           {t.title}
                         </p>
-                        <p className="tp-tell-detail">{t.detail}</p>
-                        {t.sample && <p className="tp-tell-sample">“{t.sample}”</p>}
+                        <p className="ui-tell-detail">{t.detail}</p>
+                        {t.sample && <p className="ui-tell-sample">“{t.sample}”</p>}
                       </div>
                     ))
                   )}
                 </div>
 
                 {e.questions && e.questions.length > 0 && (
-                  <div className="tp-gaps">
-                    <p className="tp-sub-title">이걸 알려주면 초안이 좋아져요</p>
+                  <div className="ui-gaps">
+                    <h3>이걸 알려주면 초안이 좋아져요</h3>
                     {e.questions.map((q, k) => (
-                      <div className="tp-gap" key={k}>
-                        <p className="tp-gap-q">{q.question}</p>
-                        <p className="tp-gap-why">{q.about}</p>
+                      <div className="ui-gap" key={k}>
+                        <p className="ui-gap-q">{q.question}</p>
+                        <p className="ui-gap-why">{q.about}</p>
                       </div>
                     ))}
-                    <p className="tp-sub-desc" style={{ margin: 0 }}>
-                      경험에 없는 내용은 지어내지 않았어요. 채워 넣고 다시 뽑으면 구체적인 글이 됩니다.
+                    <p className="ui-hint">
+                      경험에 없는 내용은 지어내지 않았어요. 채워 넣고 다시 뽑으면 구체적인 글이
+                      됩니다.
                     </p>
                   </div>
                 )}
@@ -430,65 +455,70 @@ export default function ResumeRoom() {
       })}
 
       {/* 문항 추가 */}
-      <div className="tp-panel">
-        <p className="tp-col-title">+ 문항 추가</p>
-        <p className="tp-sub-desc" style={{ margin: 0 }}>
-          공고에 있는 문항을 그대로 옮겨 적으세요. 여러 개를 먼저 등록해두고 하나씩 뽑으면 됩니다.
-        </p>
-
-        <label className="tp-field">
-          <span className="tp-label">문항</span>
-          <textarea
-            className="tp-textarea"
-            rows={2}
-            value={newPrompt}
-            onChange={(ev) => {
-              setNewPrompt(ev.target.value);
-              if (ev.target.value.trim()) setNewKind(guessKind(ev.target.value));
-            }}
-            placeholder="예) 지원 동기와 입사 후 이루고 싶은 목표를 기술해 주십시오."
-            style={{ width: "100%", boxSizing: "border-box" }}
-          />
-        </label>
-
-        <div className="tp-field">
-          <span className="tp-label">
-            문항 유형 <span className="tp-optional">(자동 추측 — 틀리면 바꿔주세요)</span>
-          </span>
-          <div className="tp-choices">
-            {KINDS.map((k) => (
-              <button
-                key={k.id}
-                type="button"
-                className="tp-chip"
-                aria-pressed={newKind === k.id}
-                onClick={() => setNewKind(k.id)}
-                title={k.looksFor}
-              >
-                {k.label}
-              </button>
-            ))}
-          </div>
+      <section className="ui-sec">
+        <div className="ui-sec-head">
+          <h2>+ 문항 추가</h2>
+          <p>공고에 있는 문항을 그대로 옮겨 적으세요</p>
         </div>
 
-        <label className="tp-field">
-          <span className="tp-label">글자수 제한 <span className="tp-optional">(선택)</span></span>
-          <input
-            className="tp-input"
-            type="number"
-            min={0}
-            value={newMax}
-            onChange={(ev) => setNewMax(ev.target.value)}
-            placeholder="예: 800"
-          />
-        </label>
+        <div className="ui-panel ui-form">
+          <label className="ui-field">
+            <span>문항</span>
+            <textarea
+              className="ui-textarea"
+              rows={2}
+              value={newPrompt}
+              onChange={(ev) => {
+                setNewPrompt(ev.target.value);
+                if (ev.target.value.trim()) setNewKind(guessKind(ev.target.value));
+              }}
+              placeholder="예) 지원 동기와 입사 후 이루고 싶은 목표를 기술해 주십시오."
+            />
+          </label>
 
-        {error && <p className="tp-error">{error}</p>}
+          <div className="ui-field">
+            <span>
+              문항 유형 <em>(자동 추측 — 틀리면 바꿔주세요)</em>
+            </span>
+            <div className="ui-actions">
+              {KINDS.map((k) => (
+                <button
+                  key={k.id}
+                  type="button"
+                  className="ui-chip"
+                  aria-pressed={newKind === k.id}
+                  onClick={() => setNewKind(k.id)}
+                  title={k.looksFor}
+                >
+                  {k.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        <button className="tp-btn" onClick={addQuestion} disabled={!newPrompt.trim()}>
-          + 문항 추가
-        </button>
-      </div>
-    </div>
+          <label className="ui-field is-narrow">
+            <span>
+              글자수 제한 <em>(선택)</em>
+            </span>
+            <input
+              className="ui-input"
+              type="number"
+              min={0}
+              value={newMax}
+              onChange={(ev) => setNewMax(ev.target.value)}
+              placeholder="예: 800"
+            />
+          </label>
+
+          {error && <p className="ui-note is-err">{error}</p>}
+
+          <div className="ui-actions is-end">
+            <button className="ui-btn" onClick={addQuestion} disabled={!newPrompt.trim()}>
+              + 문항 추가
+            </button>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

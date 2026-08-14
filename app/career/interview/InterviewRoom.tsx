@@ -163,31 +163,43 @@ export default function InterviewRoom() {
     }
   };
 
-  if (loading) return <p className="tp-note">불러오는 중...</p>;
+  if (loading) return <p className="ui-note">불러오는 중…</p>;
 
   /* ── 설정 ── */
   if (!interviewId) {
     return (
-      <div className="tp-career-col">
-        <div className="tp-panel">
-          <p className="tp-col-title">🎤 누구와 면접을 볼까요?</p>
+      <>
+        <header className="ui-head">
+          <h1>면접 준비</h1>
+          <p>면접관을 골라 앉히고, 실제처럼 한 번에 답해보세요.</p>
+        </header>
 
-          <label className="tp-field">
-            <span className="tp-label">
-              지원 건 <span className="tp-optional">{apps.length === 0 && "(없어도 연습은 됩니다)"}</span>
+        <div className="ui-panel ui-form">
+          <div className="ui-field">
+            <span>
+              지원 건 <em>{apps.length === 0 && "(없어도 연습은 됩니다)"}</em>
             </span>
             {apps.length === 0 ? (
               <>
-                <p className="tp-sub-desc" style={{ margin: 0 }}>
+                <p className="ui-hint">
                   지원 건이 있으면 <strong>내가 낸 자소서를 읽고</strong> 꼬리질문을 합니다.
                 </p>
-                <button className="tp-btn-outline" onClick={() => router.push("/career/desk")}>
-                  🗂️ 책상에서 지원 건 만들기
-                </button>
+                <div className="ui-actions">
+                  <button
+                    className="ui-btn ui-btn-ghost"
+                    onClick={() => router.push("/career/desk")}
+                  >
+                    🗂️ 책상에서 지원 건 만들기
+                  </button>
+                </div>
               </>
             ) : (
               <>
-                <select className="tp-input" value={appId} onChange={(e) => setAppId(e.target.value)}>
+                <select
+                  className="ui-input"
+                  value={appId}
+                  onChange={(e) => setAppId(e.target.value)}
+                >
                   {apps.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.company.name} · {a.role}
@@ -195,124 +207,153 @@ export default function InterviewRoom() {
                     </option>
                   ))}
                 </select>
-                <span className="tp-sub-desc" style={{ margin: 0 }}>
-                  자소서에 쓴 문장을 그대로 인용해 되묻습니다.
-                </span>
+                <p className="ui-hint">자소서에 쓴 문장을 그대로 인용해 되묻습니다.</p>
               </>
             )}
-          </label>
+          </div>
 
-          <div className="tp-field">
-            <span className="tp-label">면접관 <span className="tp-optional">(2~3명이 적당해요)</span></span>
-            <div className="tp-exp-pick">
+          <div className="ui-field">
+            <span>
+              면접관 <em>(2~3명이 적당해요)</em>
+            </span>
+            <div className="ui-picks">
               {INTERVIEWERS.map((i) => (
                 <button
                   key={i.id}
                   type="button"
-                  className="tp-pick"
+                  className="ui-pick"
                   aria-pressed={picked.includes(i.id)}
                   onClick={() => toggle(i.id)}
                 >
-                  <strong>{i.emoji} {i.name}</strong>
+                  <strong>
+                    {i.emoji} {i.name}
+                  </strong>
                   <em>{i.role}</em>
                 </button>
               ))}
             </div>
           </div>
 
-          <label className="tp-field">
-            <span className="tp-label">
-              질문 수 <span className="tp-optional">· 꼬리질문 포함해서 {maxTurns}번 답합니다</span>
+          <label className="ui-field">
+            <span>
+              질문 수 <em>· 꼬리질문 포함해서 {maxTurns}번 답합니다 (1~10개)</em>
             </span>
             <input
+              className="ui-range"
               type="range"
               min={1}
               max={10}
               value={maxTurns}
               onChange={(e) => setMaxTurns(Number(e.target.value))}
-              style={{ width: "100%" }}
             />
-            <span className="tp-sub-desc" style={{ margin: 0 }}>1 ~ 10개</span>
           </label>
 
-          {error && <p className="tp-error">{error}</p>}
+          {error && <p className="ui-note is-err">{error}</p>}
 
-          <button className="tp-btn" onClick={start} disabled={picked.length === 0 || waiting}>
-            {waiting ? "면접관을 부르는 중..." : "🎤 면접 시작"}
-          </button>
-          <p className="tp-sub-desc" style={{ margin: 0 }}>
-            답변은 <strong>제출하면 고칠 수 없어요.</strong> 실제 면접처럼 한 번에 답해보세요.
-          </p>
+          <div className="ui-actions is-end">
+            <span className="ui-hint">
+              답변은 <strong>제출하면 고칠 수 없어요.</strong>
+            </span>
+            <button className="ui-btn" onClick={start} disabled={picked.length === 0 || waiting}>
+              {waiting ? "면접관을 부르는 중…" : "🎤 면접 시작"}
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   /* ── 총평 ── */
   if (feedback) {
     return (
-      <div className="tp-career-col">
-        <div className="tp-panel">
-          <p className="tp-col-title">🎤 {meta.companyName} · {meta.role} — 면접 총평</p>
+      <>
+        <header className="ui-head is-row">
+          <div>
+            <h1>면접 총평</h1>
+            <p>
+              {meta.companyName} · {meta.role}
+            </p>
+          </div>
+          <button className="ui-btn" onClick={() => location.reload()}>
+            🎤 다시 연습하기
+          </button>
+        </header>
 
+        <div className="ui-panel ui-form">
           {feedback.noAnswer && (
-            <div className="tp-gaps">
-              <p className="tp-gap-q">답변다운 답변이 없어서 평가할 게 없어요.</p>
-              <p className="tp-gap-why">
-                질문에 한 문장이라도 실제로 답한 뒤에 다시 받아보세요.
-              </p>
+            <div className="ui-gaps">
+              <p className="ui-gap-q">답변다운 답변이 없어서 평가할 게 없어요.</p>
+              <p className="ui-gap-why">질문에 한 문장이라도 실제로 답한 뒤에 다시 받아보세요.</p>
             </div>
           )}
 
-          {feedback.timing && <p className="tp-connect">⏱ {feedback.timing}</p>}
+          {feedback.timing && <p className="ui-tip">⏱ {feedback.timing}</p>}
 
           {feedback.strengths.length > 0 && (
-            <div className="tp-sub tp-sub-tight">
-              <p className="tp-sub-title">잘 지킨 것</p>
-              <ul className="tp-check">
-                {feedback.strengths.map((s, i) => <li key={i}>✓ {s}</li>)}
+            <div className="ui-field">
+              <span>잘 지킨 것</span>
+              <ul className="ui-check">
+                {feedback.strengths.map((s, i) => (
+                  <li key={i} className="is-done">
+                    ✓ {s}
+                  </li>
+                ))}
               </ul>
             </div>
           )}
 
           {feedback.habits.length > 0 && (
-            <div className="tp-gaps">
-              <p className="tp-sub-title">반복해서 나온 습관</p>
+            <div className="ui-gaps">
+              <h3>반복해서 나온 습관</h3>
               {feedback.habits.map((h, i) => (
-                <div className="tp-gap" key={i}><p className="tp-gap-q">{h}</p></div>
+                <div className="ui-gap" key={i}>
+                  <p className="ui-gap-q">{h}</p>
+                </div>
               ))}
             </div>
           )}
 
           {feedback.todo.length > 0 && (
-            <div className="tp-sub tp-sub-tight">
-              <p className="tp-sub-title">다음 면접 전에 준비할 것</p>
-              <ul className="tp-check">
-                {feedback.todo.map((t, i) => <li key={i}>· {t}</li>)}
+            <div className="ui-field">
+              <span>다음 면접 전에 준비할 것</span>
+              <ul className="ui-check">
+                {feedback.todo.map((t, i) => (
+                  <li key={i}>· {t}</li>
+                ))}
               </ul>
             </div>
           )}
         </div>
 
-        {feedback.perQuestion.map((q, i) => (
-          <div className="tp-panel" key={i}>
-            <div className="tp-q-head">
-              <span className="tp-q-num">{i + 1}</span>
-              <div className="tp-q-title"><strong>{q.question}</strong></div>
-            </div>
-            {q.good && <p className="tp-connect">👍 {q.good}</p>}
-            {q.weak && <p className="tp-blk-body">{q.weak}</p>}
-            {q.better && (
-              <div className="tp-gaps">
-                <p className="tp-sub-title">이렇게 답했다면</p>
-                <div className="tp-essay-body">{q.better}</div>
-              </div>
-            )}
+        <section className="ui-sec">
+          <div className="ui-sec-head">
+            <h2>질문별로</h2>
+            <p>{feedback.perQuestion.length}개</p>
           </div>
-        ))}
 
-        <button className="tp-btn" onClick={() => location.reload()}>🎤 다시 연습하기</button>
-      </div>
+          <ol className="ui-steps">
+            {feedback.perQuestion.map((q, i) => (
+              <li className="ui-step" key={i}>
+                <h3 className="ui-step-head">
+                  <span className="ui-step-n">{i + 1}</span>
+                  {q.question}
+                </h3>
+
+                <div className="ui-step-body ui-form">
+                  {q.good && <p className="ui-tip">👍 {q.good}</p>}
+                  {q.weak && <p className="ui-step-text">{q.weak}</p>}
+                  {q.better && (
+                    <div className="ui-gaps">
+                      <h3>이렇게 답했다면</h3>
+                      <p className="ui-step-text">{q.better}</p>
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </>
     );
   }
 
@@ -323,79 +364,102 @@ export default function InterviewRoom() {
   const valid = checkAnswer(answer);
 
   return (
-    <div className="tp-career-col">
-      <div className="tp-iv-top">
-        <strong>{meta.companyName} · {meta.role}</strong>
-        <span className="tp-iv-count">질문 {answered + (done ? 0 : 1)} / {maxTurns}</span>
-        <span className={`tp-iv-timer${over ? " is-over" : ""}`}>
-          ⏱ {String(Math.floor(elapsed / 60)).padStart(1, "0")}:{String(elapsed % 60).padStart(2, "0")}
+    <>
+      <header className="ui-head is-row">
+        <div>
+          <h1>
+            {meta.companyName} · {meta.role}
+          </h1>
+          <p>
+            질문 {answered + (done ? 0 : 1)} / {maxTurns}
+          </p>
+        </div>
+        <span className={`ui-badge ${over ? "is-fail is-urgent" : "is-mute"}`}>
+          ⏱ {String(Math.floor(elapsed / 60))}:{String(elapsed % 60).padStart(2, "0")}
         </span>
-      </div>
+      </header>
 
-      <div className="tp-chat" ref={chatRef}>
+      <div className="ui-chat" ref={chatRef}>
         {turns.map((t, i) =>
           t.role === "interviewer" ? (
-            <div className="tp-msg tp-msg-left" key={i}>
-              <span className="tp-chat-avatar">{getInterviewer(t.speaker ?? "").emoji}</span>
-              <div className="tp-msg-col">
-                <span className="tp-msg-who">{getInterviewer(t.speaker ?? "").name}</span>
-                <div className="tp-chat-bubble">{t.content}</div>
+            <div className="ui-msg" key={i}>
+              <span className="ui-msg-face">{getInterviewer(t.speaker ?? "").emoji}</span>
+              <div className="ui-msg-col">
+                <span className="ui-msg-who">{getInterviewer(t.speaker ?? "").name}</span>
+                <div className="ui-bubble">{t.content}</div>
               </div>
             </div>
           ) : (
-            <div className="tp-msg tp-msg-right" key={i}>
-              <span className="tp-chat-avatar">🙋</span>
-              <div className="tp-msg-col">
-                <span className="tp-msg-who">
+            <div className="ui-msg is-right" key={i}>
+              <span className="ui-msg-face">🙋</span>
+              <div className="ui-msg-col">
+                <span className="ui-msg-who">
                   {t.invalid
                     ? `나 · ⚠ ${t.invalid}`
                     : `나 ${t.seconds ? `· ${t.seconds}초` : ""}${t.over ? " · 길었어요" : ""}`}
                 </span>
-                <div className={`tp-chat-bubble${t.invalid ? " is-invalid" : ""}`}>{t.content}</div>
+                <div className={`ui-bubble${t.invalid ? " is-invalid" : ""}`}>{t.content}</div>
               </div>
             </div>
           )
         )}
+
         {waiting && (
-          <div className="tp-msg tp-msg-left">
-            <span className="tp-chat-avatar">💭</span>
-            <div className="tp-judge-typing"><span /><span /><span /></div>
+          <div className="ui-msg">
+            <span className="ui-msg-face">💭</span>
+            <div className="ui-msg-col">
+              <div className="ui-bubble">
+                <span className="ui-typing">
+                  <span />
+                  <span />
+                  <span />
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {error && <p className="tp-error">{error}</p>}
+      {error && <p className="ui-note is-err">{error}</p>}
 
       {done ? (
-        <button className="tp-btn" onClick={finish} disabled={waiting}>
-          {waiting ? "총평을 만드는 중..." : "📋 총평 받기"}
-        </button>
+        <div className="ui-actions is-end">
+          <button className="ui-btn" onClick={finish} disabled={waiting}>
+            {waiting ? "총평을 만드는 중…" : "📋 총평 받기"}
+          </button>
+        </div>
       ) : (
-        <div className="tp-panel">
+        <div className="ui-panel ui-form">
           <textarea
-            className="tp-textarea"
+            className="ui-textarea"
             rows={4}
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="답변을 입력하세요. 제출하면 고칠 수 없어요."
             disabled={waiting}
-            style={{ width: "100%", boxSizing: "border-box" }}
           />
-          <div className="tp-iv-foot">
-            <span className={`tp-sub-desc${willSpeak > LIMIT_SEC || !valid.ok ? " is-over" : ""}`} style={{ margin: 0 }}>
+
+          <div className="ui-actions">
+            <span className={willSpeak > LIMIT_SEC || !valid.ok ? "ui-note is-err" : "ui-hint"}>
               {answer.trim() && !valid.ok
                 ? `⚠ ${valid.reason} — 이대로 내면 답변으로 안 쳐요`
                 : `말하면 약 ${willSpeak}초${willSpeak > LIMIT_SEC ? " · 1분을 넘겨요" : ""}`}
             </span>
-            <button className="tp-btn" onClick={submit} disabled={!answer.trim() || waiting}>
+
+            <button
+              className="ui-btn ui-btn-ghost"
+              style={{ marginLeft: "auto" }}
+              onClick={finish}
+              disabled={waiting}
+            >
+              그만하고 총평
+            </button>
+            <button className="ui-btn" onClick={submit} disabled={!answer.trim() || waiting}>
               제출
             </button>
           </div>
-          <button className="tp-btn-outline" onClick={finish} disabled={waiting}>
-            그만하고 총평 받기
-          </button>
         </div>
       )}
-    </div>
+    </>
   );
 }

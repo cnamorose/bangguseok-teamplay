@@ -50,7 +50,7 @@ export default function ShiftFlow({
 
   // 연도가 하나뿐이면 전이도가 의미 없다 → 결론만
   if (sorted.length < 2) {
-    return conclusion ? <p className="tp-shift-only">{conclusion}</p> : null;
+    return conclusion ? <p className="ui-judge-body">{conclusion}</p> : null;
   }
 
   const rows = toRows(sorted);
@@ -61,27 +61,29 @@ export default function ShiftFlow({
   const rowCount = Math.max(rows.length, hasPlan ? declared.length : 0);
 
   return (
-    <div className="tp-shift">
+    <div className="ui-shift">
       <div
-        className="tp-shift-grid"
+        className="ui-shift-grid"
         style={{ gridTemplateColumns: `repeat(${cols}, minmax(118px, 1fr))` }}
       >
         {sorted.map((y) => (
-          <div key={y.year} className="tp-shift-head">{y.year}</div>
+          <div key={y.year} className="ui-shift-head">
+            {y.year}
+          </div>
         ))}
-        {hasPlan && <div className="tp-shift-head is-plan">선언한 방향</div>}
+        {hasPlan && <div className="ui-shift-head is-plan">선언한 방향</div>}
 
         {Array.from({ length: rowCount }, (_, r) => {
           const row = rows[r];
           const plan = declared[r];
           return (
-            <div className="tp-shift-row" key={r} style={{ display: "contents" }}>
+            <div className="ui-shift-row" key={r} style={{ display: "contents" }}>
               {sorted.map((_, c) => {
                 const cell = row?.cells[c] ?? null;
                 return (
-                  <div key={c} className="tp-shift-cell">
+                  <div key={c} className="ui-shift-cell">
                     {cell && (
-                      <span className={`tp-kw is-${cell.mark}`}>
+                      <span className={`ui-kw is-${cell.mark}`}>
                         {cell.mark === "gone" ? <del>{cell.word}</del> : cell.word}
                         {cell.mark === "new" && <b aria-label="새로 등장"> +</b>}
                       </span>
@@ -90,9 +92,9 @@ export default function ShiftFlow({
                 );
               })}
               {hasPlan && (
-                <div className="tp-shift-cell">
+                <div className="ui-shift-cell">
                   {plan && (
-                    <span className="tp-kw is-plan">
+                    <span className="ui-kw is-plan">
                       {plan.text}
                       {plan.horizon && <em> · {plan.horizon}</em>}
                     </span>
@@ -104,11 +106,15 @@ export default function ShiftFlow({
         })}
       </div>
 
-      {conclusion && <p className="tp-shift-concl">{conclusion}</p>}
-      <p className="tp-shift-legend">
-        <span className="tp-kw is-new">유지·신규<b> +</b></span>
-        <span className="tp-kw is-gone"><del>빠짐</del></span>
-        {hasPlan && <span className="tp-kw is-plan">점선 = 회사가 선언한 것</span>}
+      {conclusion && <p className="ui-shift-concl">{conclusion}</p>}
+      <p className="ui-shift-legend">
+        <span className="ui-kw is-new">
+          유지·신규<b> +</b>
+        </span>
+        <span className="ui-kw is-gone">
+          <del>빠짐</del>
+        </span>
+        {hasPlan && <span className="ui-kw is-plan">점선 = 회사가 선언한 것</span>}
       </p>
     </div>
   );

@@ -11,33 +11,31 @@ export default function LanguageBars({ words }: { words: LanguageWord[] }) {
   const sorted = [...words].sort((a, b) => b.weight - a.weight).slice(0, 8);
 
   return (
-    <div className="tp-lang">
+    <div className="ui-lang">
       {sorted.map((w, i) => (
-        <div key={i} className="tp-lang-row">
-          <span className="tp-lang-word">{w.word}</span>
-          <span className="tp-lang-bar">
+        <div key={i} className="ui-lang-row">
+          <span className="ui-lang-word">{w.word}</span>
+          <span className="ui-rubric-bar">
             <span
-              className={`tp-lang-fill${w.official ? " is-official" : ""}`}
+              className={`ui-rubric-fill${w.official ? "" : " is-outside"}`}
               style={{ width: `${Math.round((w.weight / max) * 100)}%` }}
             />
           </span>
           <span
-            className="tp-lang-dot"
+            className="ui-lang-dot"
             title={w.official ? "회사가 직접 쓰는 말" : "외부에서만 관찰됨"}
           >
             {w.official ? "●" : "○"}
           </span>
-          <span className="tp-lang-from">{w.from.join("·")}</span>
+          <span className="ui-lang-from">{w.from.join("·")}</span>
         </div>
       ))}
 
-      <p className="tp-lang-note">
+      <p className="ui-hint">
         <strong>●</strong> 회사가 직접 쓰는 말 — 자소서에 그대로 넣어도 되는 단어 ·{" "}
         <strong>○</strong> 외부에서만 관찰됨
       </p>
-      <p className="tp-lang-cliche">
-        피하세요 — {CLICHES.join(" · ")}
-      </p>
+      <p className="ui-hint">피하세요 — {CLICHES.join(" · ")}</p>
     </div>
   );
 }

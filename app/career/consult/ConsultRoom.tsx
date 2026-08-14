@@ -132,7 +132,7 @@ export default function ConsultRoom() {
     }
   };
 
-  if (loading) return <p className="tp-note">불러오는 중...</p>;
+  if (loading) return <p className="ui-note">불러오는 중…</p>;
 
   // 넘겨 볼 페이지 (첨삭단 4 + 고칠 곳 + 바뀐 곳)
   const pages = [
@@ -167,245 +167,299 @@ export default function ConsultRoom() {
     : Array.from(text).length;
 
   return (
-    <div className="tp-assemble">
-      {/* ── 좌측: 첨삭할 글 ── */}
-      <div className="tp-col">
-        <SegmentedToggle
-          ariaLabel="첨삭할 글 고르기"
-          value={source}
-          onChange={(v) => setSource(v)}
-          options={[
-            { value: "saved", label: "📋 저장된 문항" },
-            { value: "paste", label: "📝 붙여넣기" },
-          ]}
-        />
+    <>
+      <header className="ui-head">
+        <h1>자소서 첨삭</h1>
+        <p>네 명이 각자 다른 눈으로 보고, 고칠 곳과 수정본까지 내놔요.</p>
+      </header>
 
-        {source === "saved" ? (
-          essays.length === 0 ? (
-            <div className="tp-sub">
-              <p className="tp-sub-desc">
-                아직 작성된 문항이 없어요. 붙여넣기로 바로 받아볼 수 있습니다.
-              </p>
-              <button className="tp-btn-outline" onClick={() => router.push("/career/resume")}>
-                ✍️ 자소서 쓰러 가기
-              </button>
-            </div>
-          ) : (
-            <label className="tp-field">
-              <span className="tp-label">문항</span>
-              <select className="tp-input" value={essayId} onChange={(e) => setEssayId(e.target.value)}>
-                {essays.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.application.company.name} · {e.application.role} — {e.prompt.slice(0, 24)} ({e.charCount}자)
-                  </option>
-                ))}
-              </select>
-              <span className="tp-sub-desc" style={{ margin: 0 }}>
-                이 문항에 쓴 경험과 대조해 <strong>지어낸 내용이 없는지</strong>까지 봅니다.
-              </span>
-            </label>
-          )
-        ) : (
-          <>
-            <div className="tp-two">
-              <label className="tp-field">
-                <span className="tp-label">회사 <span className="tp-optional">(선택)</span></span>
-                <input className="tp-input" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="네이버" />
-              </label>
-              <label className="tp-field">
-                <span className="tp-label">직무 <span className="tp-optional">(선택)</span></span>
-                <input className="tp-input" value={role} onChange={(e) => setRole(e.target.value)} placeholder="백엔드 개발" />
-              </label>
-            </div>
-
-            <label className="tp-field">
-              <span className="tp-label">문항</span>
-              <textarea
-                className="tp-textarea"
-                rows={2}
-                value={prompt}
-                onChange={(e) => {
-                  setPrompt(e.target.value);
-                  if (e.target.value.trim()) setKind(guessKind(e.target.value));
-                }}
-                placeholder="예) 지원 동기와 입사 후 이루고 싶은 목표를 기술해 주십시오."
-                style={{ width: "100%", boxSizing: "border-box" }}
-              />
-            </label>
-
-            <div className="tp-field">
-              <span className="tp-label">유형 <span className="tp-optional">(자동 추측)</span></span>
-              <div className="tp-choices">
-                {KINDS.map((k) => (
-                  <button key={k.id} type="button" className="tp-chip" aria-pressed={kind === k.id} onClick={() => setKind(k.id)}>
-                    {k.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <label className="tp-field tp-field-grow">
-              <span className="tp-label">
-                자소서 내용 <span className="tp-optional">{chars > 0 && `· ${chars}자`}</span>
-              </span>
-              <textarea
-                className="tp-textarea"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="써 둔 자소서를 그대로 붙여넣으세요."
-                style={{ width: "100%", boxSizing: "border-box" }}
-              />
-            </label>
-
-            <label className="tp-field">
-              <span className="tp-label">글자수 제한 <span className="tp-optional">(선택)</span></span>
-              <input className="tp-input" type="number" min={0} value={maxChars} onChange={(e) => setMaxChars(e.target.value)} placeholder="800" />
-            </label>
-          </>
-        )}
-
-        <label className="tp-field">
-          <span className="tp-label">
-            이건 꼭 살려주세요 <span className="tp-optional">(선택 · 첨삭보다 우선)</span>
-          </span>
-          <textarea
-            className="tp-textarea"
-            rows={2}
-            value={opinion}
-            onChange={(e) => setOpinion(e.target.value)}
-            placeholder="예) 두 번째 문단의 캐싱 얘기는 꼭 남겨주세요"
-            style={{ width: "100%", boxSizing: "border-box" }}
+      <div className="ui-eval">
+        {/* ── 왼쪽: 첨삭할 글 ── */}
+        <div className="ui-evcol">
+          <SegmentedToggle
+            ariaLabel="첨삭할 글 고르기"
+            value={source}
+            onChange={(v) => setSource(v)}
+            options={[
+              { value: "saved", label: "📋 저장된 문항" },
+              { value: "paste", label: "📝 붙여넣기" },
+            ]}
           />
-        </label>
 
-        {error && <p className="tp-error">{error}</p>}
-
-        <button className="tp-btn" onClick={run} disabled={!canRun || running}>
-          {running ? "🔍 첨삭 중..." : "🔍 첨삭 받기"}
-        </button>
-        {running && <p className="tp-sub-desc" style={{ margin: 0 }}>{progress}</p>}
-      </div>
-
-      {/* ── 우측: 페이지로 넘겨 보기 ── */}
-      <div className="tp-col tp-col-paged">
-        <p className="tp-page-name">{PAGE_LABEL[curKey]}</p>
-
-        <div className="tp-page-view">
-          {/* 첨삭단 한 명 */}
-          {REVIEWERS.some((r) => r.id === curKey) &&
-            (() => {
-              const rv = REVIEWERS.find((r) => r.id === curKey)!;
-              const r = byId(rv.id);
-              return (
-                <div className={r ? "tp-judge tp-judge-done" : "tp-judge"}>
-                  <div className="tp-judge-top">
-                    <span className="tp-judge-face">{rv.emoji}</span>
-                    <span className="tp-judge-id">
-                      <span className="tp-judge-name">{rv.name}</span>
-                      <span className="tp-judge-role">{rv.role}</span>
-                    </span>
-                    {r ? (
-                      <span className="tp-judge-score">
-                        {r.scoreLabel} {r.score}/{r.maxScore}
-                      </span>
-                    ) : (
-                      <span className="tp-judge-wait">{running ? "보는 중" : "대기 중"}</span>
-                    )}
-                  </div>
-
-                  {r ? (
-                    <>
-                      {r.breakdown && <RubricBars breakdown={r.breakdown} />}
-                      <p className="tp-judge-body">{r.comment}</p>
-                    </>
-                  ) : running ? (
-                    <div className="tp-judge-typing">
-                      <span /><span /><span />
-                    </div>
-                  ) : (
-                    <p className="tp-judge-pending">글을 고르고 첨삭을 받아보세요.</p>
-                  )}
-                </div>
-              );
-            })()}
-
-          {/* 고칠 곳 */}
-          {curKey === "points" &&
-            (points.length === 0 ? (
-              <p className="tp-judge-pending">첨삭이 끝나면 고칠 곳이 여기 정리돼요.</p>
-            ) : (
-              <div className="tp-gaps">
-                {points.map((p, i) => (
-                  <div className="tp-gap" key={i}>
-                    <p className="tp-gap-q">“{p.where}”</p>
-                    <p className="tp-gap-why">{p.problem}</p>
-                    <p className="tp-point-fix">→ {p.fix}</p>
-                  </div>
-                ))}
-              </div>
-            ))}
-
-          {/* 바뀐 곳 + 수정본 */}
-          {curKey === "diff" && revised && (
-            <>
-              <DiffView original={original} revised={revised} />
-              <div className="tp-edit-head" style={{ marginTop: 14 }}>
-                <p className="tp-sub-title" style={{ margin: 0 }}>✨ 수정본</p>
-                <button className="tp-btn-sm" onClick={() => navigator.clipboard.writeText(revised)}>
-                  📋 복사
+          {source === "saved" ? (
+            essays.length === 0 ? (
+              <div className="ui-empty">
+                <h3>작성된 문항이 없어요</h3>
+                <p>붙여넣기로 바로 받아볼 수 있습니다.</p>
+                <button className="ui-btn" onClick={() => router.push("/career/resume")}>
+                  ✍️ 자소서 쓰러 가기
                 </button>
               </div>
-              <div className="tp-essay-body">{revised}</div>
-              <p className="tp-sub-desc" style={{ margin: 0 }}>
-                그대로 내지 말고 한 번 소리 내어 읽어보세요. 어색한 곳이 내 말투가 아닌 곳입니다.
-              </p>
+            ) : (
+              <label className="ui-field">
+                <span>문항</span>
+                <select
+                  className="ui-input"
+                  value={essayId}
+                  onChange={(e) => setEssayId(e.target.value)}
+                >
+                  {essays.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.application.company.name} · {e.application.role} —{" "}
+                      {e.prompt.slice(0, 24)} ({e.charCount}자)
+                    </option>
+                  ))}
+                </select>
+                <p className="ui-hint">
+                  이 문항에 쓴 경험과 대조해 <strong>지어낸 내용이 없는지</strong>까지 봅니다.
+                </p>
+              </label>
+            )
+          ) : (
+            <>
+              <div className="ui-form-row">
+                <label className="ui-field">
+                  <span>
+                    회사 <em>(선택)</em>
+                  </span>
+                  <input
+                    className="ui-input"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="네이버"
+                  />
+                </label>
+                <label className="ui-field">
+                  <span>
+                    직무 <em>(선택)</em>
+                  </span>
+                  <input
+                    className="ui-input"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    placeholder="백엔드 개발"
+                  />
+                </label>
+              </div>
+
+              <label className="ui-field">
+                <span>문항</span>
+                <textarea
+                  className="ui-textarea"
+                  rows={2}
+                  value={prompt}
+                  onChange={(e) => {
+                    setPrompt(e.target.value);
+                    if (e.target.value.trim()) setKind(guessKind(e.target.value));
+                  }}
+                  placeholder="예) 지원 동기와 입사 후 이루고 싶은 목표를 기술해 주십시오."
+                />
+              </label>
+
+              <div className="ui-field">
+                <span>
+                  유형 <em>(자동 추측)</em>
+                </span>
+                <div className="ui-actions">
+                  {KINDS.map((k) => (
+                    <button
+                      key={k.id}
+                      type="button"
+                      className="ui-chip"
+                      aria-pressed={kind === k.id}
+                      onClick={() => setKind(k.id)}
+                    >
+                      {k.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="ui-field is-grow">
+                <span>
+                  자소서 내용 <em>{chars > 0 && `· ${chars}자`}</em>
+                </span>
+                <textarea
+                  className="ui-textarea"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="써 둔 자소서를 그대로 붙여넣으세요."
+                />
+              </label>
+
+              <label className="ui-field is-narrow">
+                <span>
+                  글자수 제한 <em>(선택)</em>
+                </span>
+                <input
+                  className="ui-input"
+                  type="number"
+                  min={0}
+                  value={maxChars}
+                  onChange={(e) => setMaxChars(e.target.value)}
+                  placeholder="800"
+                />
+              </label>
             </>
           )}
+
+          <label className="ui-field">
+            <span>
+              이건 꼭 살려주세요 <em>(선택 · 첨삭보다 우선)</em>
+            </span>
+            <textarea
+              className="ui-textarea"
+              rows={2}
+              value={opinion}
+              onChange={(e) => setOpinion(e.target.value)}
+              placeholder="예) 두 번째 문단의 캐싱 얘기는 꼭 남겨주세요"
+            />
+          </label>
+
+          {error && <p className="ui-note is-err">{error}</p>}
+
+          <div className="ui-actions is-end">
+            {running && <span className="ui-hint">{progress}</span>}
+            <button className="ui-btn" onClick={run} disabled={!canRun || running}>
+              {running ? "🔍 첨삭 중…" : "🔍 첨삭 받기"}
+            </button>
+          </div>
         </div>
 
-        {/* 하단 페이지네이션 */}
-        <div className="tp-pager">
-          <button
-            type="button"
-            className="tp-pager-arrow"
-            onClick={() => prevIdx !== undefined && setPage(prevIdx)}
-            disabled={prevIdx === undefined}
-            aria-label="이전"
-          >
-            ‹
-          </button>
+        {/* ── 오른쪽: 넘겨 보기 ── */}
+        <div className="ui-evcol">
+          <p className="ui-pagetitle">{PAGE_LABEL[curKey]}</p>
 
-          <div className="tp-pager-dots">
-            {pages.map((p, i) => (
-              <button
-                key={p.key}
-                type="button"
-                className="tp-pager-dot"
-                aria-current={i === cur}
-                disabled={!pageEnabled(p.key)}
-                onClick={() => setPage(i)}
-                title={PAGE_LABEL[p.key]}
-              >
-                {p.emoji}
-              </button>
-            ))}
+          <div className="ui-pagebody">
+            {/* 첨삭단 한 명 */}
+            {REVIEWERS.some((r) => r.id === curKey) &&
+              (() => {
+                const rv = REVIEWERS.find((r) => r.id === curKey)!;
+                const r = byId(rv.id);
+                return (
+                  <article className={r ? "ui-judge is-done" : "ui-judge"}>
+                    <div className="ui-judge-top">
+                      <span className="ui-judge-face">{rv.emoji}</span>
+                      <span className="ui-judge-t">
+                        <b>{rv.name}</b>
+                        <span>{rv.role}</span>
+                      </span>
+                      {r ? (
+                        <span className="ui-judge-score">
+                          <b>{r.score}</b>
+                          <span>
+                            /{r.maxScore} {r.scoreLabel}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="ui-judge-wait">{running ? "보는 중" : "대기 중"}</span>
+                      )}
+                    </div>
+
+                    {r ? (
+                      <>
+                        {r.breakdown && <RubricBars breakdown={r.breakdown} />}
+                        <p className="ui-judge-body">{r.comment}</p>
+                      </>
+                    ) : running ? (
+                      <div className="ui-typing">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    ) : (
+                      <p className="ui-judge-body">글을 고르고 첨삭을 받아보세요.</p>
+                    )}
+                  </article>
+                );
+              })()}
+
+            {/* 고칠 곳 */}
+            {curKey === "points" &&
+              (points.length === 0 ? (
+                <p className="ui-note">첨삭이 끝나면 고칠 곳이 여기 정리돼요.</p>
+              ) : (
+                <div className="ui-gaps">
+                  {points.map((p, i) => (
+                    <div className="ui-gap" key={i}>
+                      <p className="ui-gap-q">“{p.where}”</p>
+                      <p className="ui-gap-why">{p.problem}</p>
+                      <p className="ui-gap-fix">→ {p.fix}</p>
+                    </div>
+                  ))}
+                </div>
+              ))}
+
+            {/* 바뀐 곳 + 수정본 */}
+            {curKey === "diff" && revised && (
+              <div className="ui-form">
+                <DiffView original={original} revised={revised} />
+
+                <div className="ui-panel ui-form">
+                  <div className="ui-actions">
+                    <h3 style={{ margin: 0 }}>✨ 수정본</h3>
+                    <button
+                      className="ui-btn ui-btn-ghost"
+                      style={{ marginLeft: "auto", padding: "6px 12px", fontSize: 12.5 }}
+                      onClick={() => navigator.clipboard.writeText(revised)}
+                    >
+                      📋 복사
+                    </button>
+                  </div>
+                  <p className="ui-doc-body">{revised}</p>
+                  <p className="ui-hint">
+                    그대로 내지 말고 한 번 소리 내어 읽어보세요. 어색한 곳이 내 말투가 아닌
+                    곳입니다.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
-          <button
-            type="button"
-            className="tp-pager-arrow"
-            onClick={() => nextIdx !== undefined && setPage(nextIdx)}
-            disabled={nextIdx === undefined}
-            aria-label="다음"
-          >
-            ›
-          </button>
-        </div>
+          {allDone && !revised && running && (
+            <p className="ui-hint">수정본을 만드는 중…</p>
+          )}
 
-        {allDone && !revised && running && (
-          <p className="tp-sub-desc" style={{ margin: 0 }}>수정본을 만드는 중...</p>
-        )}
+          {/* 하단 페이지 넘기기 */}
+          <div className="ui-pager">
+            <button
+              type="button"
+              className="ui-iconround"
+              onClick={() => prevIdx !== undefined && setPage(prevIdx)}
+              disabled={prevIdx === undefined}
+              aria-label="이전"
+            >
+              ‹
+            </button>
+
+            <div className="ui-dots">
+              {pages.map((p, i) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  className="ui-dot"
+                  aria-current={i === cur}
+                  disabled={!pageEnabled(p.key)}
+                  onClick={() => setPage(i)}
+                  title={PAGE_LABEL[p.key]}
+                >
+                  {p.emoji}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="ui-iconround"
+              onClick={() => nextIdx !== undefined && setPage(nextIdx)}
+              disabled={nextIdx === undefined}
+              aria-label="다음"
+            >
+              ›
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
