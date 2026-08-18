@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ColorTab from "@/app/components/ColorTab";
@@ -102,7 +104,7 @@ export default function Desk() {
     }).catch(() => {});
   };
 
-  if (loading) return <p className="ui-note">책상을 정리하는 중…</p>;
+  if (loading) return <Loading label="책상을 정리하는 중…" />;
 
   if (creating) {
     return (

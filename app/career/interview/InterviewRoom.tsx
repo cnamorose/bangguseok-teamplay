@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { INTERVIEWERS, getInterviewer, speakSeconds } from "@/lib/agents/interview/interviewers";
@@ -163,7 +165,7 @@ export default function InterviewRoom() {
     }
   };
 
-  if (loading) return <p className="ui-note">불러오는 중…</p>;
+  if (loading) return <Loading label="불러오는 중…" />;
 
   /* ── 설정 ── */
   if (!interviewId) {

@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ColorTab from "@/app/components/ColorTab";
@@ -16,7 +18,7 @@ export default function Shelf() {
   const [view, setView] = useState<View>("books");
   const [q, setQ] = useState("");
 
-  if (loading) return <p className="ui-note">불러오는 중…</p>;
+  if (loading) return <Loading label="불러오는 중…" />;
 
   const key = q.trim().toLowerCase();
   const books = key

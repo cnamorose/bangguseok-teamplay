@@ -1259,6 +1259,25 @@ body {
 .ui-card-line { font-size: 12px; font-weight: 700; color: var(--sage); word-break: keep-all; }
 .ui-card-desc { font-size: 12px; line-height: 1.6; color: var(--fg-3); word-break: keep-all; }
 
+/* ── 불러오는 중 ──
+   책등이 하나씩 꽂히는 모양. 왼쪽 위에 글자만 뜨면 로딩인지 에러인지 모른다. */
+.ui-main > .ui-loading { margin: auto; } /* 첫 자식 위 여백 규칙을 덮고 가운데로 */
+.ui-loading {
+  margin: auto;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  padding: 60px 24px; text-align: center;
+}
+.ui-loading p { margin: 0; font-size: 13.5px; font-weight: 700; color: var(--fg-2); }
+.ui-loading-books { display: flex; align-items: flex-end; gap: 5px; height: 32px; }
+.ui-loading-books span {
+  width: 9px; border-radius: 2px 2px 0 0;
+  animation: ui-shelving 1.1s ease-in-out infinite;
+}
+@keyframes ui-shelving {
+  0%, 100% { height: 13px; opacity: .4; }
+  50%      { height: 30px; opacity: 1; }
+}
+
 /* ── 실행 중 ── */
 .ui-main > .ui-run {
   margin: auto; /* 첫 자식 위 여백 규칙을 덮고 화면 가운데에 둔다 */
@@ -1926,6 +1945,8 @@ select.ui-input { cursor: pointer; }
   .ui-book, .ui-clip, .ui-btn, .ui-collapse, .ui-card, .ui-progress-fill,
   .ui-panel.is-click { transition: none; }
   .ui-progress-fill.is-indet, .ui-typing span { animation: none; }
+  /* 움직임을 끄되 책등은 보이게 둔다 */
+  .ui-loading-books span { animation: none; height: 22px; }
 }
 @media (max-width: 720px) {
   /* 세로로 쌓이므로 화면 가두기를 풀고 평범한 페이지 스크롤로 */

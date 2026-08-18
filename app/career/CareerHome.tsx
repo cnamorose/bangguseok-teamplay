@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ddayLabel, isUrgent, statusLabel } from "./desk/status";
@@ -51,7 +53,7 @@ export default function CareerHome({ userName }: { userName: string }) {
     return { essays, written, urgent };
   }, [apps]);
 
-  if (loading) return <p className="ui-note">불러오는 중…</p>;
+  if (loading) return <Loading label="불러오는 중…" />;
 
   return (
     <>

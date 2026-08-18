@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useEffect, useState } from "react";
 import SegmentedToggle from "@/app/components/SegmentedToggle";
 import {
@@ -396,7 +398,7 @@ export default function ExperienceRoom() {
         />
       </div>
 
-      {loading && <p className="ui-note">경험을 불러오는 중…</p>}
+      {loading && <Loading label="경험을 불러오는 중…" />}
       {error && <p className="ui-note is-err">{error}</p>}
 
       {!loading && items.length === 0 && (

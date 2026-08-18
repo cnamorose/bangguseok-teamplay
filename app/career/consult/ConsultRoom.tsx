@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { readSse } from "@/lib/sse-client";
@@ -132,7 +134,7 @@ export default function ConsultRoom() {
     }
   };
 
-  if (loading) return <p className="ui-note">불러오는 중…</p>;
+  if (loading) return <Loading label="불러오는 중…" />;
 
   // 넘겨 볼 페이지 (첨삭단 4 + 고칠 곳 + 바뀐 곳)
   const pages = [

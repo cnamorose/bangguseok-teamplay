@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -125,7 +127,7 @@ export default function SharedView({ token }: { token: string }) {
     </div>
   );
 
-  if (loading) return frame(<p className="ui-note">불러오는 중…</p>);
+  if (loading) return frame(<Loading />);
 
   if (error && !data) {
     return frame(

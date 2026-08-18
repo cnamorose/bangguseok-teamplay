@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useEffect, useState } from "react";
 
 // 거실 — 두 방에서 내놓은 것이 모이는 자리.
@@ -115,7 +117,7 @@ export default function LivingRoom() {
     load();
   };
 
-  if (loading) return <p className="ui-note">거실을 둘러보는 중…</p>;
+  if (loading) return <Loading label="거실을 둘러보는 중…" />;
   if (error) return <p className="ui-note is-err">{error}</p>;
 
   const live = mine.filter((s) => !s.revoked);

@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { readSse } from "@/lib/sse-client";
@@ -201,7 +203,7 @@ export default function ResumeRoom() {
     load(appId);
   };
 
-  if (loading) return <p className="ui-note">불러오는 중…</p>;
+  if (loading) return <Loading label="불러오는 중…" />;
 
   if (exps.length === 0) {
     return (

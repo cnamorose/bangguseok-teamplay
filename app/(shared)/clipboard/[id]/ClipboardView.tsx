@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseSource } from "@/lib/parse-source";
@@ -62,7 +64,7 @@ export default function ClipboardView({ id }: { id: string }) {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  if (loading) return <p className="ui-note">불러오는 중…</p>;
+  if (loading) return <Loading label="불러오는 중…" />;
   if (error) return <p className="ui-note is-err">{error}</p>;
   if (!clip) return null;
 

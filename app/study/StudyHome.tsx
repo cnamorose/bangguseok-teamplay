@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useRouter } from "next/navigation";
 import { shelfColor } from "@/lib/shelf-color";
 import { chiefScore, fmtDate, useShelfData } from "./bookshelf/useShelfData";
@@ -17,7 +19,7 @@ export default function StudyHome({ userName }: { userName: string }) {
   const router = useRouter();
   const { results, clips, stats, loading, error } = useShelfData();
 
-  if (loading) return <p className="ui-note">불러오는 중…</p>;
+  if (loading) return <Loading label="불러오는 중…" />;
 
   return (
     <>

@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { readSse } from "@/lib/sse-client";
@@ -150,7 +152,7 @@ export default function CompanyList() {
       </div>
 
       {/* 목록 */}
-      {loading && <p className="ui-note">회사 목록을 불러오는 중…</p>}
+      {loading && <Loading label="회사 목록을 불러오는 중…" />}
 
       {!loading && companies.length === 0 && (
         <div className="ui-empty">

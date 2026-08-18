@@ -1,5 +1,7 @@
 "use client";
 
+import Loading from "@/app/components/Loading";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ShiftFlow from "../ShiftFlow";
@@ -62,7 +64,7 @@ export default function CompanyView({ id }: { id: string }) {
     }
   };
 
-  if (loading) return <p className="ui-note">분석을 펼치는 중…</p>;
+  if (loading) return <Loading label="분석을 펼치는 중…" />;
   if (error) return <p className="ui-note is-err">{error}</p>;
   if (!company) return null;
 
