@@ -4,8 +4,8 @@
 # 여기서 하는 일은 두 가지뿐이다 — 빌드 전에 마이그레이션을 태우고, Node 버전을 고정한다.
 
 [build]
-  # migrate deploy는 DIRECT_URL(직결)로 간다. 실패하면 빌드가 멈춰서
-  # 스키마와 안 맞는 코드가 배포되는 일을 막는다.
+  # 마이그레이션을 빌드 앞에 둔다. 실패하면 빌드가 멈춰서 스키마와 안 맞는
+  # 코드가 배포되는 일을 막는다.
   command = "npx prisma migrate deploy && npm run build"
   publish = ".next"
 
