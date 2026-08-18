@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Shelves from "@/app/components/Shelves";
+import BookSpines from "@/app/components/BookSpines";
+
+// 껍데기(Shell) 밖에 있는 화면이라 틀(.ui-page)과 밝기를 직접 세운다.
+
+const MODE_KEY = "tp-mode";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,6 +14,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    setDark(localStorage.getItem(MODE_KEY) === "dark");
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,22 +50,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="tp-wall">
-      {/* 배경 책장 (장식) */}
-      <Shelves />
-
-      {/* 로그인 카드 */}
-      <div className="tp-card">
-        <div className="tp-card-header">
-          <h1>🏠 방구석 스터디</h1>
+    <div className="ui-page ui-auth" data-mode={dark ? "dark" : "light"}>
+      <div className="ui-auth-card">
+        <div>
+          <BookSpines />
+          <h1 style={{ marginTop: 18 }}>🏠 방구석 스터디</h1>
           <p>내 방 책장에서 시작하는 공부와 취업 준비</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="tp-card-body">
-          <label className="tp-field">
-            <span className="tp-label">이메일</span>
+        <form onSubmit={handleSubmit}>
+          <label className="ui-field">
+            <span>이메일</span>
             <input
-              className="tp-input"
+              className="ui-input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -65,10 +71,10 @@ export default function LoginPage() {
             />
           </label>
 
-          <label className="tp-field">
-            <span className="tp-label">비밀번호</span>
+          <label className="ui-field">
+            <span>비밀번호</span>
             <input
-              className="tp-input"
+              className="ui-input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -77,17 +83,21 @@ export default function LoginPage() {
             />
           </label>
 
-          {error && <p className="tp-error">{error}</p>}
+          {error && <p className="ui-note is-err">{error}</p>}
 
-          <button className="tp-btn" type="submit" disabled={loading}>
-            {loading ? "여는 중..." : "📖 책장 열기"}
+          <button
+            className="ui-btn"
+            type="submit"
+            disabled={loading}
+            style={{ justifyContent: "center" }}
+          >
+            {loading ? "여는 중…" : "📖 책장 열기"}
           </button>
-
-          <p className="tp-signup">
-            아직 방이 없나요?{" "}
-            <a href="/signup" className="tp-link">방 만들기 →</a>
-          </p>
         </form>
+
+        <p className="ui-auth-foot">
+          아직 방이 없나요? <a href="/signup">방 만들기 →</a>
+        </p>
       </div>
     </div>
   );

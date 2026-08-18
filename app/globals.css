@@ -1599,6 +1599,31 @@ body {
   color: var(--sage); background: color-mix(in srgb, var(--sage) 15%, transparent);
 }
 
+/* ── 인증 화면 (로그인 · 회원가입) ──
+   껍데기 없이 홀로 서는 화면. 가운데 카드 하나로 끝낸다. */
+.ui-auth {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.ui-auth-card {
+  width: min(400px, 100%);
+  display: flex; flex-direction: column; gap: 22px;
+  padding: clamp(24px, 5vw, 34px);
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 18px; box-shadow: var(--lift);
+}
+.ui-auth-card h1 { margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -.5px; }
+.ui-auth-card h1 + p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.7; color: var(--fg-2); word-break: keep-all; }
+.ui-auth-card form { display: flex; flex-direction: column; gap: 16px; }
+.ui-auth-foot { margin: 0; text-align: center; font-size: 13px; color: var(--fg-2); }
+.ui-auth-foot a { color: var(--sage); font-weight: 700; text-decoration: none; }
+.ui-auth-foot a:hover { text-decoration: underline; }
+
+/* 책등 몇 권 — 남은 유일한 장식 */
+.ui-spines { display: flex; align-items: flex-end; gap: 5px; height: 34px; }
+.ui-spines span { flex: 1; border-radius: 2px 2px 0 0; }
+
 /* ── 공유 페이지 ──
    껍데기 없이 홀로 서는 화면. 왼쪽 글 2 : 오른쪽 댓글 1.
    글이 길어도 댓글은 옆에 붙어 있어야 읽으면서 반응할 수 있다. */
@@ -1865,6 +1890,16 @@ select.ui-input { cursor: pointer; }
 }
 .ui-badge.is-pass { color: var(--sage); background: color-mix(in srgb, var(--sage) 16%, transparent); }
 .ui-badge.is-fail { color: var(--danger); background: color-mix(in srgb, var(--danger) 15%, transparent); }
+
+/* ── 동그란 아이콘 자리 ──
+   줄 높이를 1로 묶지 않으면 글리프가 baseline에 앉아 원 안에서 아래로 치우친다.
+   가운데 정렬이 맞추는 건 글리프가 아니라 줄 상자라서다 (이모지에서 특히 눈에 띈다) */
+.ui-logo-mark, .ui-avatar, .ui-face, .ui-plate-face, .ui-seat-face,
+.ui-judge-face, .ui-msg-face, .ui-board-face, .ui-post-face,
+.ui-step-n, .ui-stepgo-n, .ui-iconround, .ui-modal-x, .ui-collapse,
+.ui-pin, .ui-iconbtn, .ui-swatch.is-auto {
+  line-height: 1;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .ui-book, .ui-clip, .ui-btn, .ui-collapse, .ui-card, .ui-progress-fill,
