@@ -547,6 +547,7 @@ body {
   --pad-y:   clamp(16px, 2vw, 24px); /* 본문 위 여백 */
   --pad-x:   clamp(16px, 2vw, 28px); /* 본문 좌우 여백 */
   --content: 1440px; /* 본문 기둥 폭. 넓은 화면에서 글줄·입력칸이 끝까지 늘어나지 않게 */
+  --chip-h:  32px;   /* 캡슐 높이 — 칩과 캡슐형 입력이 같이 쓴다 */
 
   background: var(--bg);
   color: var(--fg);
@@ -1016,11 +1017,16 @@ body {
   font-size: 12px; line-height: 1.6; color: var(--fg-2); overflow-x: auto;
 }
 
-/* ── 칩 · 입력 ── */
+/* ── 칩 · 입력 ──
+   높이를 글꼴 지표에 맡기면 이모지가 든 칩, 날짜 입력이 든 칩이 제각각 커진다.
+   한 값(--chip-h)으로 못박아 한 줄에 섰을 때 어긋나지 않게 한다. */
 .ui-chip {
-  padding: 7px 13px; font: inherit; font-size: 12.5px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--chip-h); padding: 0 14px;
+  font: inherit; font-size: 12.5px; font-weight: 700; line-height: 1;
   color: var(--fg-2); background: var(--sunken);
   border: 1px solid transparent; border-radius: 999px; cursor: pointer;
+  white-space: nowrap;
   transition: color .14s, background .14s;
 }
 .ui-chip:hover { color: var(--fg); }
@@ -1029,6 +1035,21 @@ body {
   background: color-mix(in srgb, var(--sage) 14%, transparent);
   border-color: color-mix(in srgb, var(--sage) 40%, transparent);
 }
+/* 캡슐 줄에 끼는 입력 — 옆 칩과 높이·모양을 맞춘다 */
+.ui-chipfield {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: var(--chip-h); padding: 0 5px 0 13px;
+  background: var(--sunken); border: 1px solid transparent; border-radius: 999px;
+}
+.ui-chipfield > span { font-size: 12.5px; font-weight: 700; line-height: 1; color: var(--fg-2); }
+.ui-chipfield input {
+  width: auto; height: calc(var(--chip-h) - 10px); padding: 0 10px;
+  font: inherit; font-size: 12.5px; font-weight: 700; line-height: 1;
+  color: var(--fg); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; outline: none;
+}
+.ui-chipfield input:focus { border-color: var(--sage); }
+
 .ui-input {
   width: 100%; padding: 10px 13px; font: inherit; font-size: 13px;
   color: var(--fg); background: var(--sunken);

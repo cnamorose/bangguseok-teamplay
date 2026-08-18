@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import ShareButton from "@/app/components/ShareButton";
 import { STATUSES, ddayLabel, isUrgent, statusLabel } from "../status";
 import { KINDS } from "@/lib/agents/essay/kinds";
 import { CompanyAnalysis, RoleAnalysis } from "@/lib/agents/company/types";
@@ -91,11 +92,9 @@ export default function ApplicationView({ id }: { id: string }) {
         </div>
 
         <div className="ui-actions">
-          <label className="ui-field" style={{ flexDirection: "row", alignItems: "center" }}>
+          <label className="ui-chipfield">
             <span>마감</span>
             <input
-              className="ui-input"
-              style={{ width: "auto" }}
               type="date"
               value={app.deadline ? app.deadline.slice(0, 10) : ""}
               onChange={(e) => patch({ deadline: e.target.value })}
@@ -226,6 +225,9 @@ export default function ApplicationView({ id }: { id: string }) {
                       )}
                     </p>
                   </div>
+                  {/* 다 쓴 문항만 내놓을 수 있다 — 빈 글을 공유해봐야 볼 게 없다 */}
+                  {e.charCount > 0 && <ShareButton kind="essay" targetId={e.id} />}
+
                   <button
                     className="ui-btn ui-btn-ghost"
                     onClick={() => setOpenEssay(openEssay === e.id ? null : e.id)}
