@@ -1,0 +1,19 @@
+# Netlify 배포 설정
+#
+# Next.js 어댑터는 Netlify가 자동으로 붙이므로 플러그인을 따로 적지 않는다.
+# 여기서 하는 일은 두 가지뿐이다 — 빌드 전에 마이그레이션을 태우고, Node 버전을 고정한다.
+
+[build]
+  # migrate deploy는 DIRECT_URL(직결)로 간다. 실패하면 빌드가 멈춰서
+  # 스키마와 안 맞는 코드가 배포되는 일을 막는다.
+  command = "npx prisma migrate deploy && npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    # SSE는 중간에서 버퍼링되면 진행 상황이 한 번에 몰려 온다
+    Cache-Control = "no-cache, no-transform"

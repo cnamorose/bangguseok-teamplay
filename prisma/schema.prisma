@@ -5,6 +5,9 @@
 
 generator client {
   provider = "prisma-client-js"
+  // 빌드는 리눅스(Netlify)에서, 실행은 Lambda에서 일어나 엔진 바이너리가 다르다.
+  // native만 만들면 배포 후 "Query engine not found"로 죽는다.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
