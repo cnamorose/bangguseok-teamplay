@@ -208,6 +208,12 @@ export default function Assemble() {
         setLoading(false);
         return;
       }
+
+      // 완료도 실패도 없이 스트림이 끝났다 — 중간에 끊겼다는 뜻이다.
+      // 여기서 안 잡으면 진행바 화면에 영영 갇힌다.
+      // 입력은 그대로 남아 있으므로 실행 버튼을 다시 누르면 같은 설정으로 돈다.
+      setError("중간에 연결이 끊겼어요. 설정은 그대로 있으니 다시 실행해주세요.");
+      setLoading(false);
     } catch {
       setError("서버 오류가 발생했습니다.");
       setLoading(false);

@@ -463,6 +463,13 @@ export default function Evaluate() {
           setLoading(false);
         }
       });
+
+      // 스트림이 끝났는데도 아직 도는 중이면 중간에 끊긴 것이다.
+      // 여기서 안 풀면 평가단이 영영 "보는 중"으로 남는다.
+      setLoading((busy) => {
+        if (busy) setError("중간에 연결이 끊겼어요. 글은 그대로 있으니 다시 받아주세요.");
+        return false;
+      });
     } catch {
       setError("서버 오류가 발생했습니다.");
       setLoading(false);
@@ -509,6 +516,12 @@ export default function Evaluate() {
           setDiscussProgress(event.message);
           setDiscussing(false);
         }
+      });
+
+      // 스트림이 끝났는데도 회의 중이면 중간에 끊긴 것이다
+      setDiscussing((busy) => {
+        if (busy) setDiscussProgress("중간에 연결이 끊겼어요. 논의를 다시 시작해주세요.");
+        return false;
       });
     } catch {
       setDiscussProgress("논의 진행에 실패했습니다.");
@@ -870,12 +883,32 @@ export default function Evaluate() {
                       )}
                     </div>
                     <div className="ui-revision-body">
-                      {revisedText || (
+                      {revisedText ? (
+                        revisedText
+                      ) : discussing ? (
                         <span className="ui-hint">
-                          {discussing
-                            ? "회의가 끝나면 수정된 글이 여기에 나타나요."
-                            : "아직 수정본이 없어요."}
+                          회의가 끝나면 수정된 글이 여기에 나타나요.
                         </span>
+                      ) : (
+                        /* 회의는 시작됐는데 안 돌고 수정본도 없다 = 중간에 끊겼다.
+                           설정 화면이 이미 사라진 뒤라 돌아갈 길을 따로 열어준다 */
+                        <div className="ui-form">
+                          <span className="ui-hint">
+                            수정본이 나오지 않았어요. 발언 횟수를 다시 정해 논의를 걸 수 있어요.
+                          </span>
+                          <div className="ui-actions">
+                            <button
+                              className="ui-btn"
+                              onClick={() => {
+                                setDiscussStarted(false);
+                                setMessages([]);
+                                setDiscussProgress("");
+                              }}
+                            >
+                              💬 논의 다시 걸기
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
