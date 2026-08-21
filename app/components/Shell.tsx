@@ -36,6 +36,8 @@ export default function Shell({
   const [dark, setDark] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // 좁은 화면에서 사이드바가 서랍으로 바뀐다. 넓은 화면에서는 이 값이 아무 일도 안 한다
+  const [drawer, setDrawer] = useState(false);
   const footRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,6 +57,17 @@ export default function Shell({
     localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
   };
 
+  // 화면을 옮기면 서랍을 닫는다. 안 닫으면 새 화면 위에 서랍이 덮인 채로 남는다
+  useEffect(() => setDrawer(false), [pathname]);
+
+  // 서랍이 열려 있을 때 Esc로 닫기
+  useEffect(() => {
+    if (!drawer) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setDrawer(false);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [drawer]);
+
   useEffect(() => {
     if (!menuOpen) return;
     const onDown = (e: MouseEvent) => {
@@ -68,6 +81,10 @@ export default function Shell({
       document.removeEventListener("keydown", onKey);
     };
   }, [menuOpen]);
+
+  // 아이콘만 보여줄지. 접힘은 넓은 화면 얘기라, 서랍으로 열렸을 땐 무시한다
+  // (좁은 화면에서 서랍을 열었는데 아이콘만 있으면 어디로 가는지 알 수 없다)
+  const tight = collapsed && !drawer;
 
   // 거실처럼 방 밖인 화면에선 마지막에 있던 방의 메뉴를 유지한다
   const mode = modeFromPath(pathname) ?? toModeId(user.mode);
@@ -91,7 +108,27 @@ export default function Shell({
   };
 
   return (
-    <div className="ui" data-mode={dark ? "dark" : "light"} data-collapsed={collapsed}>
+    <div
+      className="ui"
+      data-mode={dark ? "dark" : "light"}
+      data-collapsed={tight}
+      data-drawer={drawer ? "open" : "closed"}
+    >
+      {/* 좁은 화면에서만 보이는 줄. 넓은 화면에선 CSS가 감춘다 */}
+      <div className="ui-topbar">
+        <button
+          className="ui-menubtn"
+          onClick={() => setDrawer(true)}
+          aria-label="메뉴 열기"
+          aria-expanded={drawer}
+        >
+          ☰
+        </button>
+        <span className="ui-topbar-name">
+          {MODES[mode].emoji} {MODES[mode].label}
+        </span>
+      </div>
+
       {/* 사이드바 밖에 둔다 — 안에 두면 사이드바의 스크롤이 이 버튼을 잘라낸다 */}
       <button
         className="ui-collapse"
@@ -102,10 +139,13 @@ export default function Shell({
         {collapsed ? "›" : "‹"}
       </button>
 
+      {/* 서랍 뒤를 덮는 면 — 눌러서 닫는다 */}
+      <div className="ui-scrim" onClick={() => setDrawer(false)} aria-hidden="true" />
+
       <aside className="ui-side">
         <Link href={MODES[mode].home} className="ui-logo" title="방구석 스터디">
           <span className="ui-logo-mark">🏠</span>
-          {!collapsed && <span>방구석 스터디</span>}
+          {!tight && <span>방구석 스터디</span>}
         </Link>
 
         <div className="ui-rooms" role="tablist" aria-label="방 이동">
@@ -118,7 +158,7 @@ export default function Shell({
               onClick={() => switchMode(m.id)}
               title={m.label}
             >
-              {collapsed ? m.emoji : `${m.emoji} ${m.label}`}
+              {tight ? m.emoji : `${m.emoji} ${m.label}`}
             </button>
           ))}
         </div>
@@ -133,7 +173,7 @@ export default function Shell({
               aria-current={pathname === item.href ? "page" : undefined}
             >
               <span className="ui-navicon">{item.icon}</span>
-              {!collapsed && item.label}
+              {!tight && item.label}
             </Link>
           ))}
 
@@ -147,12 +187,12 @@ export default function Shell({
             aria-current={inLiving ? "page" : undefined}
           >
             <span className="ui-navicon">{LIVING.icon}</span>
-            {!collapsed && LIVING.label}
+            {!tight && LIVING.label}
           </Link>
         </nav>
 
         <div className="ui-foot" ref={footRef}>
-          {collapsed ? (
+          {tight ? (
             <button
               className="ui-iconbtn"
               onClick={() => setMenuOpen((v) => !v)}
